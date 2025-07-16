@@ -58,15 +58,15 @@ interface FormData {
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Unit Leader Dashboard',
-        href: '/koabiga/unit-leader/dashboard',
+        href: '/koabiga/leaders/dashboard',
     },
     {
         title: 'Forms',
-        href: '/koabiga/unit-leader/forms',
+        href: '/koabiga/leaders/forms',
     },
     {
         title: 'Crop Creation',
-        href: '/koabiga/unit-leader/forms/crop-creation',
+        href: '/koabiga/leaders/forms/crop-creation',
     },
 ];
 
@@ -244,7 +244,7 @@ export default function CropCreationForm() {
                 
                 // Redirect after 2 seconds
                 setTimeout(() => {
-                    router.visit('/koabiga/unit-leader/forms');
+                    router.visit('/koabiga/leaders/forms');
                 }, 2000);
             } else {
                 setError(response.data.message || 'Failed to create crop');
@@ -263,7 +263,7 @@ export default function CropCreationForm() {
     };
 
     const handleCancel = () => {
-        router.visit('/koabiga/unit-leader/forms');
+        router.visit('/koabiga/leaders/forms');
     };
 
     return (

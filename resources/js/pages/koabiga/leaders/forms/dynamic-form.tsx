@@ -97,15 +97,15 @@ export default function DynamicForm({ formId }: DynamicFormProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Unit Leader Dashboard',
-            href: '/koabiga/unit-leader/dashboard',
+            href: '/koabiga/leaders/dashboard',
         },
         {
             title: 'Forms',
-            href: '/koabiga/unit-leader/forms',
+            href: '/koabiga/leaders/forms',
         },
         {
             title: form?.title || 'Loading...',
-            href: `/koabiga/unit-leader/forms/${formId}`,
+            href: `/koabiga/leaders/forms/${formId}`,
         },
     ];
 

@@ -28,11 +28,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Unit Leader Dashboard',
-        href: '/koabiga/unit-leader/dashboard',
+        href: '/koabiga/leaders/dashboard',
     },
     {
         title: 'Members',
-        href: '/koabiga/unit-leader/leader-members',
+        href: '/koabiga/leaders/leader-members',
     },
 ];
 

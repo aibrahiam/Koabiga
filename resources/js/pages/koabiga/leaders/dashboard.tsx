@@ -45,11 +45,11 @@ export default function UnitLeaderDashboard() {
     ];
 
     const quickActions = [
-        { title: 'Manage Members', icon: Users, href: '/koabiga/unit-leader/members', color: 'bg-green-600 dark:bg-green-500' },
-        { title: 'Land Management', icon: MapPin, href: '/koabiga/unit-leader/land', color: 'bg-green-600 dark:bg-green-500' },
-        { title: 'Crop Management', icon: Sprout, href: '/koabiga/unit-leader/crops', color: 'bg-green-600 dark:bg-green-500' },
-        { title: 'Produce Tracking', icon: Package, href: '/koabiga/unit-leader/produce', color: 'bg-green-600 dark:bg-green-500' },
-        { title: 'Reports', icon: FileText, href: '/koabiga/unit-leader/reports', color: 'bg-green-600 dark:bg-green-500' },
+        { title: 'Manage Members', icon: Users, href: '/koabiga/leaders/leader-members', color: 'bg-green-600 dark:bg-green-500' },
+        { title: 'Land Management', icon: MapPin, href: '/koabiga/leaders/land', color: 'bg-green-600 dark:bg-green-500' },
+        { title: 'Crop Management', icon: Sprout, href: '/koabiga/leaders/crops', color: 'bg-green-600 dark:bg-green-500' },
+        { title: 'Produce Tracking', icon: Package, href: '/koabiga/leaders/produce', color: 'bg-green-600 dark:bg-green-500' },
+        { title: 'Reports', icon: FileText, href: '/koabiga/leaders/reports', color: 'bg-green-600 dark:bg-green-500' },
     ];
 
     const upcomingTasks = [

@@ -235,6 +235,11 @@ Route::prefix('koabiga/leaders')->name('koabiga.leaders.')->middleware(['auth', 
         return Inertia::render('koabiga/leaders/leader-form');
     })->name('forms');
     
+    // Dynamic form route for specific form IDs
+    Route::get('forms/{formId}', function ($formId) {
+        return Inertia::render('koabiga/leaders/forms/dynamic-form', ['formId' => $formId]);
+    })->name('forms.dynamic');
+    
     Route::get('forms/member-creation', function () {
         return Inertia::render('koabiga/leaders/forms/member-creation');
     })->name('forms.member-creation');

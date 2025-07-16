@@ -53,15 +53,15 @@ interface FormData {
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Unit Leader Dashboard',
-        href: '/koabiga/unit-leader/dashboard',
+        href: '/koabiga/leaders/dashboard',
     },
     {
         title: 'Forms',
-        href: '/koabiga/unit-leader/forms',
+        href: '/koabiga/leaders/forms',
     },
     {
         title: 'Land Assignment',
-        href: '/koabiga/unit-leader/forms/land-assignment',
+        href: '/koabiga/leaders/forms/land-assignment',
     },
 ];
 
@@ -207,7 +207,7 @@ export default function LandAssignmentForm() {
                 
                 // Redirect after 2 seconds
                 setTimeout(() => {
-                    router.visit('/koabiga/unit-leader/forms');
+                    router.visit('/koabiga/leaders/forms');
                 }, 2000);
             } else {
                 setError(response.data.message || 'Failed to assign land');
@@ -226,7 +226,7 @@ export default function LandAssignmentForm() {
     };
 
     const handleCancel = () => {
-        router.visit('/koabiga/unit-leader/forms');
+        router.visit('/koabiga/leaders/forms');
     };
 
     return (

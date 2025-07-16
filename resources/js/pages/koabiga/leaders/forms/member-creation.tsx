@@ -56,15 +56,15 @@ interface MemberData {
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Unit Leader Dashboard',
-        href: '/koabiga/unit-leader/dashboard',
+        href: '/koabiga/leaders/dashboard',
     },
     {
         title: 'Forms',
-        href: '/koabiga/unit-leader/forms',
+        href: '/koabiga/leaders/forms',
     },
     {
         title: 'Member Creation',
-        href: '/koabiga/unit-leader/forms/member-creation',
+        href: '/koabiga/leaders/forms/member-creation',
     },
 ];
 
