@@ -2,63 +2,61 @@
 
 namespace App\Models;
 
+use App\Helpers\PasswordHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
         'christian_name',
         'family_name',
+        'email',
+        'password',
+        'phone',
         'id_passport',
         'national_id',
-        'email',
-        'phone',
-        'secondary_phone',
-        'pin',
-        'password',
+        'gender',
         'role',
         'status',
-        'gender',
+        'pin',
         'unit_id',
         'zone_id',
-        'last_activity_at',
-        'last_login_at',
+        'bio',
+        'avatar',
+        'secondary_phone',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
-        'pin',
         'remember_token',
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'last_activity_at' => 'datetime',
+    ];
 
     /**
      * Boot the model and add event listeners
@@ -67,31 +65,84 @@ class User extends Authenticatable
     {
         parent::boot();
 
-        // Automatically set the name field when christian_name or family_name changes
-        static::saving(function ($user) {
-            if ($user->christian_name || $user->family_name) {
-                $user->name = trim($user->christian_name . ' ' . $user->family_name);
+        // Hash password before saving
+        static::creating(function ($user) {
+            if ($user->password && !PasswordHelper::canUsePhoneLogin($user->role)) {
+                $user->password = PasswordHelper::hashPassword($user->password);
+            }
+            
+            if ($user->pin && PasswordHelper::canUsePhoneLogin($user->role)) {
+                $user->pin = PasswordHelper::hashPin($user->pin);
+            }
+        });
+
+        // Hash password before updating
+        static::updating(function ($user) {
+            if ($user->isDirty('password') && $user->password && !PasswordHelper::canUsePhoneLogin($user->role)) {
+                $user->password = PasswordHelper::hashPassword($user->password);
+            }
+            
+            if ($user->isDirty('pin') && $user->pin && PasswordHelper::canUsePhoneLogin($user->role)) {
+                $user->pin = PasswordHelper::hashPin($user->pin);
             }
         });
     }
 
     /**
-     * Get the user's full name
+     * Authenticate user by email and password (Admin only)
      */
-    public function getFullNameAttribute(): string
+    public static function authenticateByEmail(string $email, string $password): ?self
     {
-        return trim($this->christian_name . ' ' . $this->family_name);
+        $user = self::where('email', $email)->first();
+        
+        if (!$user || !PasswordHelper::canUseEmailLogin($user->role)) {
+            return null;
+        }
+
+        if (PasswordHelper::verifyPassword($password, $user->password)) {
+            $user->updateLastLogin();
+            return $user;
+        }
+
+        return null;
     }
 
     /**
-     * Get the user's display name (for non-admin users, use phone)
+     * Authenticate user by phone and PIN (Leaders and Members only)
      */
-    public function getDisplayNameAttribute(): string
+    public static function authenticateByPhone(string $phone, string $pin): ?self
     {
-        if ($this->role === 'admin') {
-            return $this->getFullNameAttribute();
+        $user = self::where('phone', $phone)->first();
+        
+        if (!$user || !PasswordHelper::canUsePhoneLogin($user->role)) {
+            return null;
         }
-        return $this->phone ?? $this->getFullNameAttribute();
+
+        if (PasswordHelper::verifyPin($pin, $user->pin)) {
+            $user->updateLastLogin();
+            return $user;
+        }
+
+        return null;
+    }
+
+    /**
+     * Update last login timestamp
+     */
+    public function updateLastLogin(): void
+    {
+        $this->update([
+            'last_login_at' => now(),
+            'last_activity_at' => now()
+        ]);
+    }
+
+    /**
+     * Update last activity timestamp
+     */
+    public function updateLastActivity(): void
+    {
+        $this->update(['last_activity_at' => now()]);
     }
 
     /**
@@ -103,14 +154,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user is member
-     */
-    public function isMember(): bool
-    {
-        return $this->role === 'member';
-    }
-
-    /**
      * Check if user is unit leader
      */
     public function isUnitLeader(): bool
@@ -119,140 +162,120 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user is zone leader
+     * Check if user is member
      */
-    public function isZoneLeader(): bool
+    public function isMember(): bool
     {
-        return $this->role === 'zone_leader';
+        return $this->role === 'member';
     }
 
     /**
-     * Authenticate user by phone and PIN
+     * Check if user is active
      */
-    public static function authenticateByPhoneAndPin(string $phone, string $pin): ?self
+    public function isActive(): bool
     {
-        // Normalize phone number - handle both 10-digit and 12-digit formats
-        $normalizedPhone = self::normalizePhoneNumber($phone);
-        
-        $user = self::where(function ($query) use ($normalizedPhone) {
-                $query->where('phone', $normalizedPhone)
-                      ->orWhere('secondary_phone', $normalizedPhone);
-            })
-            ->whereIn('role', ['member', 'unit_leader', 'zone_leader'])
-            ->first();
-
-        if ($user && Hash::check($pin, $user->pin)) {
-            return $user;
-        }
-
-        return null;
+        return $this->status === 'active';
     }
 
     /**
-     * Normalize phone number to 10-digit format (07XXXXXXXX)
+     * Get full name
      */
-    public static function normalizePhoneNumber(string $phone): string
+    public function getFullNameAttribute(): string
     {
-        // Remove any non-digit characters
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-        
-        // If it's already 10 digits and starts with 07, return as is
-        if (strlen($phone) === 10 && strpos($phone, '07') === 0) {
-            return $phone;
-        }
-        
-        // If it's 12 digits and starts with 250, remove the prefix
-        if (strlen($phone) === 12 && strpos($phone, '250') === 0) {
-            return substr($phone, 3); // Remove '250' prefix
-        }
-        
-        // If it's 9 digits and starts with 7, add 0 prefix
-        if (strlen($phone) === 9 && strpos($phone, '7') === 0) {
-            return '0' . $phone;
-        }
-        
-        // Return as is if it doesn't match any pattern
-        return $phone;
+        $parts = array_filter([$this->christian_name, $this->family_name]);
+        return !empty($parts) ? implode(' ', $parts) : $this->name;
     }
 
     /**
-     * Format phone number for display (ensure 10-digit format)
+     * Get display name
      */
-    public static function formatPhoneForDisplay(string $phone): string
+    public function getDisplayNameAttribute(): string
     {
-        // Remove any non-digit characters
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-        
-        // If it's 12 digits and starts with 250, remove the prefix
-        if (strlen($phone) === 12 && strpos($phone, '250') === 0) {
-            return substr($phone, 3); // Remove '250' prefix
-        }
-        
-        // If it's 9 digits and starts with 7, add 0 prefix
-        if (strlen($phone) === 9 && strpos($phone, '7') === 0) {
-            return '0' . $phone;
-        }
-        
-        // Return as is if it doesn't match the pattern
-        return $phone;
+        return $this->full_name ?: $this->name;
     }
 
     /**
-     * Authenticate admin by email and password
+     * Scope for active users
      */
-    public static function authenticateAdmin(string $email, string $password): ?self
+    public function scopeActive($query)
     {
-        $user = self::where('email', $email)
-            ->where('role', 'admin')
-            ->first();
-
-        if ($user && Hash::check($password, $user->password)) {
-            return $user;
-        }
-
-        return null;
+        return $query->where('status', 'active');
     }
 
     /**
-     * Relationships
+     * Scope for users by role
+     */
+    public function scopeByRole($query, string $role)
+    {
+        return $query->where('role', $role);
+    }
+
+    /**
+     * Scope for admins
+     */
+    public function scopeAdmins($query)
+    {
+        return $query->byRole('admin');
+    }
+
+    /**
+     * Scope for unit leaders
+     */
+    public function scopeUnitLeaders($query)
+    {
+        return $query->byRole('unit_leader');
+    }
+
+    /**
+     * Scope for members
+     */
+    public function scopeMembers($query)
+    {
+        return $query->byRole('member');
+    }
+
+    /**
+     * Relationship with Unit
      */
     public function unit()
     {
         return $this->belongsTo(Unit::class);
     }
 
+    /**
+     * Relationship with Zone
+     */
     public function zone()
     {
         return $this->belongsTo(Zone::class);
     }
 
+    /**
+     * Relationship with Lands
+     */
     public function lands()
     {
         return $this->hasMany(Land::class);
     }
 
+    /**
+     * Relationship with Crops
+     */
     public function crops()
     {
         return $this->hasMany(Crop::class);
     }
 
+    /**
+     * Relationship with Produces
+     */
     public function produces()
     {
         return $this->hasMany(Produce::class);
     }
 
-    public function reports()
-    {
-        return $this->hasMany(Report::class);
-    }
-
-    public function forms()
-    {
-        return $this->hasMany(Form::class);
-    }
-
     /**
-     * Get the user's activity logs
+     * Relationship with Activity Logs
      */
     public function activityLogs()
     {
@@ -260,66 +283,10 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's error logs
-     */
-    public function errorLogs()
-    {
-        return $this->hasMany(ErrorLog::class);
-    }
-
-    /**
-     * Get the user's login sessions
+     * Relationship with Login Sessions
      */
     public function loginSessions()
     {
         return $this->hasMany(LoginSession::class);
-    }
-
-    /**
-     * Get the user's active login sessions
-     */
-    public function activeLoginSessions()
-    {
-        return $this->hasMany(LoginSession::class)->where('is_active', true);
-    }
-
-    /**
-     * Get the user's latest login session
-     */
-    public function latestLoginSession()
-    {
-        return $this->hasOne(LoginSession::class)->latest();
-    }
-
-    /**
-     * Get the user's fee applications
-     */
-    public function feeApplications()
-    {
-        return $this->hasMany(FeeApplication::class);
-    }
-
-    /**
-     * Get the user's fee payments
-     */
-    public function feePayments()
-    {
-        return $this->hasMany(MemberFee::class);
-    }
-
-    /**
-     * Get the user's pending fees
-     */
-    public function pendingFees()
-    {
-        return $this->feeApplications()->whereIn('status', ['pending', 'overdue']);
-    }
-
-    /**
-     * Get the user's paid fees
-     */
-    public function paidFees()
-    {
-        return $this->feeApplications()->where('status', 'paid');
     }
 }

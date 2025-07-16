@@ -85,7 +85,7 @@ Route::middleware('auth')->group(function () {
 
     // Password update (for authenticated users)
     Route::put('/password', [AuthController::class, 'updatePassword'])
-        ->name('password.update');
+        ->name('auth.password.update');
 });
 
 /*

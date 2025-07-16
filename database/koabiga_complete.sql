@@ -389,7 +389,7 @@ CREATE INDEX idx_login_sessions_session_id ON login_sessions(session_id);
 CREATE INDEX idx_member_fees_user_id ON member_fees(user_id);
 CREATE INDEX idx_member_fees_fee_rule_id ON member_fees(fee_rule_id);
 CREATE INDEX idx_produces_crop_id ON produces(crop_id);
-CREATE INDEX idx_reports_user_id ON reports(user_id);
+CREATE INDEX idx_reports_generated_by ON reports(generated_by);
 CREATE INDEX idx_reports_unit_id ON reports(unit_id);
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);

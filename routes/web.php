@@ -9,9 +9,7 @@ Route::get('/unauthorized', function () {
     return Inertia::render('errors/unauthorized');
 })->name('unauthorized');
 
-Route::get('/home', function () {
-    return Inertia::render('auth/welcome');
-})->name('home');
+
 
 // Main Dashboard Route - Role-based redirect
 Route::get('/dashboard', function () {
@@ -38,14 +36,7 @@ Route::get('/dashboard', function () {
 Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
     
-    // Members Management
-    Route::get('members', [\App\Http\Controllers\Admin\MemberController::class, 'index'])->name('members');
-    
-    Route::get('members/create', [\App\Http\Controllers\Admin\MemberController::class, 'create'])->name('members.create');
-
-    Route::get('members/{id}', [\App\Http\Controllers\Admin\MemberController::class, 'show'])->name('members.show');
-
-    Route::get('members/{id}/edit', [\App\Http\Controllers\Admin\MemberController::class, 'edit'])->name('members.edit');
+    // Members Management (handled by resource routes below)
     
     // Units Management
     Route::resource('units', \App\Http\Controllers\UnitController::class)->names([

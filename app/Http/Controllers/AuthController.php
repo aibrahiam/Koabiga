@@ -2,628 +2,286 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Hash; // Added Hash facade
+use App\Helpers\PasswordHelper;
 use App\Models\User;
-use App\Models\ActivityLog;
-use App\Models\LoginSession;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class AuthController extends Controller
 {
     /**
-     * Handle admin login with email and password
+     * Show admin login form
      */
-    public function adminLogin(Request $request): JsonResponse|RedirectResponse
+    public function showAdminLogin()
     {
-        $validator = Validator::make($request->all(), [
+        return Inertia::render('auth/admin-login');
+    }
+
+    /**
+     * Handle admin login
+     */
+    public function adminLogin(Request $request)
+    {
+        $request->validate([
             'email' => 'required|email',
-            'password' => 'required|string|min:6',
-        ], [
-            'email.required' => 'Email is required.',
-            'email.email' => 'Please enter a valid email address.',
-            'password.required' => 'Password is required.',
-            'password.min' => 'Password must be at least 6 characters.',
+            'password' => 'required|string',
         ]);
 
-        if ($validator->fails()) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-            
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $credentials = $request->only('email', 'password');
-        $remember = $request->boolean('remember', false);
-
-        // Use the authenticateAdmin method from User model
-        $user = User::authenticateAdmin($credentials['email'], $credentials['password']);
+        $user = User::authenticateByEmail($request->email, $request->password);
 
         if (!$user) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid credentials.'
-                ], 401);
-            }
-            
-            return back()->withErrors(['email' => 'Invalid credentials.'])->withInput();
-        }
-
-        // Log the user in (create session)
-        Auth::login($user, $remember);
-        
-        // Regenerate session to prevent session fixation
-        $request->session()->regenerate();
-        
-        // Set session timeout and security settings
-        $request->session()->put('last_activity', time());
-        $request->session()->put('login_time', time());
-        $request->session()->put('user_id', $user->id);
-        $request->session()->put('user_role', $user->role);
-        
-        // Ensure session is saved
-        $request->session()->save();
-        
-        // Debug: Log session information
-        Log::info('Admin login successful', [
-            'user_id' => $user->id,
-            'session_id' => $request->session()->getId(),
-            'session_data' => $request->session()->all(),
-        ]);
-
-        // Create login session record
-        LoginSession::create([
-            'user_id' => $user->id,
-            'session_id' => $request->session()->getId(),
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'is_active' => true,
-            'login_at' => now(),
-            'last_activity_at' => now(),
-        ]);
-
-        // Update last login
-        User::where('id', $user->id)->update([
-            'last_login_at' => now(),
-            'last_activity_at' => now(),
-        ]);
-
-        // Log activity
-        ActivityLog::create([
-            'user_id' => $user->id,
-            'action' => 'login',
-            'description' => 'Admin logged in successfully',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
-
-        // Return appropriate response based on request type
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Login successful',
-                'user' => [
-                    'id' => $user->id,
-                    'christian_name' => $user->christian_name,
-                    'family_name' => $user->family_name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'phone' => $user->phone,
-                ],
-                'session_id' => $request->session()->getId(),
-                'redirect_url' => '/koabiga/admin/dashboard'
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
             ]);
         }
-        
-        // For web requests, redirect to admin dashboard
+
+        if (!$user->isActive()) {
+            throw ValidationException::withMessages([
+                'email' => ['Your account is not active.'],
+            ]);
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
         return redirect()->intended('/koabiga/admin/dashboard');
     }
 
     /**
-     * Handle leaders login with phone and PIN
+     * Show leader login form
      */
-    public function leadersLogin(Request $request): JsonResponse
+    public function showLeaderLogin()
     {
-        $validator = Validator::make($request->all(), [
-            'phone' => 'required|numeric|digits_between:10,12',
-            'pin' => 'required|numeric|digits:5',
-        ], [
-            'phone.required' => 'Phone number is required.',
-            'phone.numeric' => 'Phone number must contain only digits.',
-            'phone.digits_between' => 'Phone number must be between 10 and 12 digits.',
-            'pin.required' => 'PIN is required.',
-            'pin.numeric' => 'PIN must contain only digits.',
-            'pin.digits' => 'PIN must be exactly 5 digits.',
+        return Inertia::render('auth/leader-login');
+    }
+
+    /**
+     * Handle leader login
+     */
+    public function leaderLogin(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+            'pin' => 'required|string|size:5',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $phone = $request->input('phone');
-        $pin = $request->input('pin');
-
-        // Attempt to authenticate user
-        $user = User::authenticateByPhoneAndPin($phone, $pin);
+        $user = User::authenticateByPhone($request->phone, $request->pin);
 
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid phone number or PIN.'
-            ], 401);
+            throw ValidationException::withMessages([
+                'phone' => ['The provided credentials are incorrect.'],
+            ]);
         }
 
-        // Check if user is a leader (unit_leader or zone_leader)
-        if (!in_array($user->role, ['unit_leader', 'zone_leader'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Access denied. Leader privileges required.'
-            ], 403);
+        if (!$user->isActive()) {
+            throw ValidationException::withMessages([
+                'phone' => ['Your account is not active.'],
+            ]);
         }
 
-        // Log the user in (create session)
         Auth::login($user);
-        
-        // Regenerate session to prevent session fixation
         $request->session()->regenerate();
-        
-        // Set session timeout and security settings
-        $request->session()->put('last_activity', time());
-        $request->session()->put('login_time', time());
-        $request->session()->put('user_id', $user->id);
-        $request->session()->put('user_role', $user->role);
-        
-        // Ensure session is saved
-        $request->session()->save();
 
-        // Update last login
-        User::where('id', $user->id)->update([
-            'last_login_at' => now(),
-            'last_activity_at' => now(),
-        ]);
-
-        // Log activity
-        ActivityLog::create([
-            'user_id' => $user->id,
-            'action' => 'login',
-            'description' => 'Leader logged in successfully',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful',
-            'user' => [
-                'id' => $user->id,
-                'christian_name' => $user->christian_name,
-                'family_name' => $user->family_name,
-                'phone' => $user->phone,
-                'role' => $user->role,
-                'unit_id' => $user->unit_id,
-                'zone_id' => $user->zone_id,
-            ],
-            'session_id' => $request->session()->getId()
-        ]);
+        return redirect()->intended('/koabiga/leaders/dashboard');
     }
 
     /**
-     * Handle member/unit leader/zone leader login with phone and PIN
+     * Show member login form
      */
-    public function login(Request $request): JsonResponse|RedirectResponse
+    public function showMemberLogin()
     {
-        $validator = Validator::make($request->all(), [
-            'phone' => 'required|numeric|digits_between:10,12',
-            'pin' => 'required|numeric|digits:5',
-        ], [
-            'phone.required' => 'Phone number is required.',
-            'phone.numeric' => 'Phone number must contain only digits.',
-            'phone.digits_between' => 'Phone number must be between 10 and 12 digits.',
-            'pin.required' => 'PIN is required.',
-            'pin.numeric' => 'PIN must contain only digits.',
-            'pin.digits' => 'PIN must be exactly 5 digits.',
+        return Inertia::render('auth/member-login');
+    }
+
+    /**
+     * Handle member login
+     */
+    public function memberLogin(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+            'pin' => 'required|string|size:5',
         ]);
 
-        if ($validator->fails()) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-            
-            return back()->withErrors($validator)->withInput();
+        $user = User::authenticateByPhone($request->phone, $request->pin);
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'phone' => ['The provided credentials are incorrect.'],
+            ]);
         }
 
-        $phone = $request->input('phone');
-        $pin = $request->input('pin');
-
-        // Attempt to authenticate member/unit leader/zone leader
-        $user = User::authenticateByPhoneAndPin($phone, $pin);
-
-        if ($user) {
-                    // Log the user in (create session)
-        Auth::login($user);
-        
-        // Regenerate session to prevent session fixation
-        $request->session()->regenerate();
-        
-        // Set session timeout and security settings
-        $request->session()->put('last_activity', time());
-        $request->session()->put('login_time', time());
-        $request->session()->put('user_id', $user->id);
-        $request->session()->put('user_role', $user->role);
-        
-        // Ensure session is saved
-        $request->session()->save();
-            
-            // Log successful login
-            Log::info('User logged in successfully', [
-                'user_id' => $user->id,
-                'phone' => $user->phone,
-                'role' => $user->role,
-                'session_id' => $request->session()->getId(),
+        if (!$user->isActive()) {
+            throw ValidationException::withMessages([
+                'phone' => ['Your account is not active.'],
             ]);
+        }
 
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'message' => 'Login successful',
-                    'user' => [
-                        'id' => $user->id,
-                        'christian_name' => $user->christian_name,
-                        'family_name' => $user->family_name,
-                        'phone' => $user->phone,
-                        'role' => $user->role,
-                        'unit_id' => $user->unit_id,
-                        'zone_id' => $user->zone_id,
-                    ],
-                ], 200);
-            }
+        Auth::login($user);
+        $request->session()->regenerate();
 
-            // For Inertia requests, redirect based on role
-            switch ($user->role) {
-                case 'admin':
-                    return redirect()->route('koabiga.admin.dashboard');
-                case 'unit_leader':
-                    return redirect()->route('koabiga.leaders.dashboard');
-                case 'member':
-                    return redirect()->route('koabiga.members.dashboard');
-                default:
-                    return redirect()->route('dashboard');
-            }
+        return redirect()->intended('/koabiga/members/dashboard');
+    }
+
+    /**
+     * Show general login form (redirects based on role)
+     */
+    public function showLogin()
+    {
+        return Inertia::render('auth/login');
+    }
+
+    /**
+     * Handle general login (legacy support)
+     */
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required_without:phone|email',
+            'phone' => 'required_without:email|string',
+            'password' => 'required_with:email|string',
+            'pin' => 'required_with:phone|string|size:5',
+        ]);
+
+        $user = null;
+
+        // Try email/password login first
+        if ($request->email && $request->password) {
+            $user = User::authenticateByEmail($request->email, $request->password);
+        }
+        // Try phone/PIN login
+        elseif ($request->phone && $request->pin) {
+            $user = User::authenticateByPhone($request->phone, $request->pin);
+        }
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        if (!$user->isActive()) {
+            throw ValidationException::withMessages([
+                'email' => ['Your account is not active.'],
+            ]);
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        // Redirect based on role
+        if ($user->isAdmin()) {
+            return redirect()->intended('/koabiga/admin/dashboard');
+        } elseif ($user->isUnitLeader()) {
+            return redirect()->intended('/koabiga/leaders/dashboard');
         } else {
-            // Log failed login attempt
-            Log::warning('Failed login attempt', [
-                'phone' => $phone,
-                'ip' => $request->ip(),
-            ]);
-            
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'message' => 'Invalid credentials'
-                ], 401);
-            }
-            
-            return back()->withErrors(['message' => 'Invalid credentials'])->withInput();
+            return redirect()->intended('/koabiga/members/dashboard');
         }
     }
 
     /**
-     * Handle user logout with proper session cleanup
+     * Handle logout
      */
-    public function logout(Request $request): JsonResponse|RedirectResponse
+    public function logout(Request $request)
     {
-        $user = Auth::user();
-        
-        if ($user) {
-            // Log the logout activity
-            ActivityLog::create([
-                'user_id' => $user->id,
-                'action' => 'logout',
-                'description' => 'User logged out successfully',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-            ]);
-
-            // Update login session status
-            LoginSession::where('user_id', $user->id)
-                ->where('session_id', $request->session()->getId())
-                ->update(['is_active' => false, 'logout_at' => now()]);
-        }
-
-        // Clear all session data
-        $request->session()->flush();
-        
-        // Logout the user
         Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Logged out successfully'
-            ]);
-        }
-
-        return redirect()->route('home')->with('message', 'You have been logged out successfully.');
+        return redirect('/');
     }
 
     /**
-     * Handle member login with phone and PIN
+     * Update user password
      */
-    public function memberLogin(Request $request): JsonResponse
+    public function updatePassword(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'phone' => 'required|numeric|digits_between:10,12',
-            'pin' => 'required|numeric|digits:5',
-        ], [
-            'phone.required' => 'Phone number is required.',
-            'phone.numeric' => 'Phone number must contain only digits.',
-            'phone.digits_between' => 'Phone number must be between 10 and 12 digits.',
-            'pin.required' => 'PIN is required.',
-            'pin.numeric' => 'PIN must contain only digits.',
-            'pin.digits' => 'PIN must be exactly 5 digits.',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $phone = $request->input('phone');
-        $pin = $request->input('pin');
-
-        // Attempt to authenticate member
-        $user = User::authenticateByPhoneAndPin($phone, $pin);
-
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid phone number or PIN.'
-            ], 401);
-        }
-
-        // Check if user is a member
-        if ($user->role !== 'member') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Access denied. Member privileges required.'
-            ], 403);
-        }
-
-        // Log the user in (create session)
-        Auth::login($user);
-        
-        // Regenerate session to prevent session fixation
-        $request->session()->regenerate();
-        
-        // Set session timeout and security settings
-        $request->session()->put('last_activity', time());
-        $request->session()->put('login_time', time());
-        $request->session()->put('user_id', $user->id);
-        $request->session()->put('user_role', $user->role);
-        
-        // Ensure session is saved
-        $request->session()->save();
-
-        // Create login session record
-        LoginSession::create([
-            'user_id' => $user->id,
-            'session_id' => $request->session()->getId(),
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'is_active' => true,
-            'login_at' => now(),
-            'last_activity_at' => now(),
-        ]);
-
-        // Update last login
-        User::where('id', $user->id)->update([
-            'last_login_at' => now(),
-            'last_activity_at' => now(),
-        ]);
-
-        // Log activity
-        ActivityLog::create([
-            'user_id' => $user->id,
-            'action' => 'login',
-            'description' => 'Member logged in successfully',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful',
-            'user' => [
-                'id' => $user->id,
-                'christian_name' => $user->christian_name,
-                'family_name' => $user->family_name,
-                'phone' => $user->phone,
-                'role' => $user->role,
-                'unit_id' => $user->unit_id,
-                'zone_id' => $user->zone_id,
-            ],
-            'session_id' => $request->session()->getId(),
-            'redirect_url' => '/koabiga/members/dashboard'
-        ]);
-    }
-
-    /**
-     * Handle password confirmation for sensitive operations
-     */
-    public function confirmPassword(Request $request): JsonResponse|RedirectResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'password' => 'required|string',
-        ]);
-
-        if ($validator->fails()) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Password is required.',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-            
-            return back()->withErrors($validator);
-        }
-
-        $user = Auth::user();
-        
-        if (!$user) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not authenticated.'
-                ], 401);
-            }
-            
-            return redirect()->route('login');
-        }
-
-        // Check password based on user role
-        $isValid = false;
-        
-        if ($user->role === 'admin') {
-            // Admin uses email/password
-            $isValid = Hash::check($request->password, $user->password);
-        } else {
-            // Leaders and members use PIN
-            $isValid = Hash::check($request->password, $user->pin);
-        }
-
-        if (!$isValid) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid password.'
-                ], 401);
-            }
-            
-            return back()->withErrors(['password' => 'Invalid password.']);
-        }
-
-        // Store password confirmation in session
-        $request->session()->put('auth.password_confirmed_at', time());
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Password confirmed successfully.'
-            ]);
-        }
-
-        return redirect()->intended();
-    }
-
-    /**
-     * Handle password update for authenticated users
-     */
-    public function updatePassword(Request $request): JsonResponse|RedirectResponse
-    {
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'current_password' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
-        ], [
-            'current_password.required' => 'Current password is required.',
-            'password.required' => 'New password is required.',
-            'password.min' => 'New password must be at least 8 characters.',
-            'password.confirmed' => 'Password confirmation does not match.',
         ]);
-
-        if ($validator->fails()) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-            
-            return back()->withErrors($validator);
-        }
 
         $user = Auth::user();
-        
-        if (!$user) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not authenticated.'
-                ], 401);
-            }
-            
-            return redirect()->route('login');
-        }
 
-        // Check current password based on user role
-        $isValid = false;
-        
-        if ($user->role === 'admin') {
-            // Admin uses email/password
-            $isValid = Hash::check($request->current_password, $user->password);
-        } else {
-            // Leaders and members use PIN
-            $isValid = Hash::check($request->current_password, $user->pin);
-        }
-
-        if (!$isValid) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Current password is incorrect.'
-                ], 401);
-            }
-            
-            return back()->withErrors(['current_password' => 'Current password is incorrect.']);
-        }
-
-        // Update password based on user role
-        if ($user->role === 'admin') {
-            User::where('id', $user->id)->update([
-                'password' => Hash::make($request->password)
-            ]);
-        } else {
-            User::where('id', $user->id)->update([
-                'pin' => Hash::make($request->password)
+        // Verify current password
+        if (!PasswordHelper::verifyPassword($request->current_password, $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The provided password does not match your current password.'],
             ]);
         }
 
-        // Log activity
-        ActivityLog::create([
-            'user_id' => $user->id,
-            'action' => 'password_update',
-            'description' => 'User updated their password',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
+        // Validate password strength
+        if (!PasswordHelper::validatePasswordStrength($request->password)) {
+            throw ValidationException::withMessages([
+                'password' => ['Password must be at least 8 characters with uppercase, lowercase, and number.'],
+            ]);
+        }
+
+        User::where('id', $user->id)->update(['password' => $request->password]);
+
+        return back()->with('success', 'Password updated successfully.');
+    }
+
+    /**
+     * Update user PIN
+     */
+    public function updatePin(Request $request)
+    {
+        $request->validate([
+            'current_pin' => 'required|string|size:5',
+            'pin' => 'required|string|size:5|confirmed',
         ]);
 
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Password updated successfully.'
+        $user = Auth::user();
+
+        // Only allow PIN updates for phone login users
+        if (!PasswordHelper::canUsePhoneLogin($user->role)) {
+            throw ValidationException::withMessages([
+                'pin' => ['PIN updates are not allowed for this user type.'],
             ]);
         }
 
-        return back()->with('status', 'Password updated successfully.');
+        // Verify current PIN
+        if (!PasswordHelper::verifyPin($request->current_pin, $user->pin)) {
+            throw ValidationException::withMessages([
+                'current_pin' => ['The provided PIN does not match your current PIN.'],
+            ]);
+        }
+
+        // Validate PIN format
+        if (!PasswordHelper::validatePinFormat($request->pin)) {
+            throw ValidationException::withMessages([
+                'pin' => ['PIN must be exactly 5 digits.'],
+            ]);
+        }
+
+        User::where('id', $user->id)->update(['pin' => $request->pin]);
+
+        return back()->with('success', 'PIN updated successfully.');
+    }
+
+    /**
+     * Generate new PIN for user
+     */
+    public function generateNewPin(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+        
+        // Only allow PIN generation for phone login users
+        if (!PasswordHelper::canUsePhoneLogin($user->role)) {
+            return back()->with('error', 'PIN generation is not allowed for this user type.');
+        }
+
+        $newPin = PasswordHelper::generatePin();
+        User::where('id', $user->id)->update(['pin' => $newPin]);
+
+        return back()->with('success', "New PIN generated: {$newPin}");
     }
 }
