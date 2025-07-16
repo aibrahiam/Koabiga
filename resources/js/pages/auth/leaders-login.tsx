@@ -34,6 +34,16 @@ export default function LeadersLogin({ status, canResetPin }: LeadersLoginProps)
         setGeneralError(null);
 
         try {
+            console.log('Sending login request:', {
+                phone: data.phone,
+                pin: data.pin,
+                url: '/api/leaders/login'
+            });
+
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            console.log('CSRF Token:', csrfToken);
+
             const response = await fetch('/api/leaders/login', {
                 method: 'POST',
                 headers: {
@@ -47,9 +57,13 @@ export default function LeadersLogin({ status, canResetPin }: LeadersLoginProps)
                 }),
             });
 
+            console.log('Response status:', response.status);
             const result = await response.json();
+            console.log('Response body:', result);
 
-            if (response.ok && result.message === 'Login successful' && result.user) {
+            if (response.ok && result.success && result.user) {
+                console.log('Login successful, user data:', result.user);
+                
                 const authUser = {
                     id: result.user.id,
                     name: `${result.user.christian_name} ${result.user.family_name}`,
@@ -62,8 +76,12 @@ export default function LeadersLogin({ status, canResetPin }: LeadersLoginProps)
                     zone_id: result.user.zone_id,
                 };
 
+                console.log('Processed auth user:', authUser);
+
                 // Use unified login function
                 login(authUser);
+                
+                console.log('User logged in, redirecting...');
                 
                 // Redirect to leaders dashboard
                 window.location.href = '/koabiga/leaders/dashboard';

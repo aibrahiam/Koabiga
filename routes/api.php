@@ -42,6 +42,15 @@ Route::middleware(['web'])->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+// Test route for debugging
+Route::post('/test-leaders-login', function (Request $request) {
+    return response()->json([
+        'message' => 'Test route working',
+        'received_data' => $request->all(),
+        'headers' => $request->headers->all()
+    ]);
+});
+
 // Debug route to test authentication
 Route::get('/debug/auth', function () {
     return response()->json([

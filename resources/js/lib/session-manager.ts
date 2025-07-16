@@ -34,7 +34,9 @@ const LEGACY_USER_KEY = 'user';
 // Store user data in localStorage
 export function storeUser(user: User): void {
   if (typeof window !== 'undefined') {
+    console.log('SessionManager: Storing user data:', user);
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    console.log('SessionManager: User data stored successfully');
   }
 }
 
@@ -43,6 +45,7 @@ export function getUser(): User | null {
   if (typeof window !== 'undefined') {
     try {
       const userData = localStorage.getItem(USER_STORAGE_KEY);
+      console.log('SessionManager: Retrieved user data from storage:', userData);
       return userData ? JSON.parse(userData) : null;
     } catch (error) {
       console.error('Error parsing user data:', error);
