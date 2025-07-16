@@ -4,6 +4,9 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
+import { AuthProvider } from './contexts/AuthContext';
+import './lib/axios'; // Import axios configuration
+import { sessionManager } from './lib/session-manager'; // Import session manager
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -13,7 +16,11 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        root.render(<App {...props} />);
+        root.render(
+            <AuthProvider>
+                <App {...props} />
+            </AuthProvider>
+        );
     },
     progress: {
         color: '#4B5563',

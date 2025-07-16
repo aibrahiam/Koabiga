@@ -53,6 +53,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'pin' => 'hashed',
         ];
     }
 
@@ -129,16 +131,12 @@ class User extends Authenticatable
     {
         // Normalize phone number - handle both 10-digit and 12-digit formats
         $normalizedPhone = self::normalizePhoneNumber($phone);
-        $rawPhone = preg_replace('/[^0-9]/', '', $phone);
         
-        $user = self::where(function($query) use ($normalizedPhone, $rawPhone) {
-                $query->where('phone', $normalizedPhone)
-                      ->orWhere('phone', $rawPhone);
-            })
+        $user = self::where('phone', $normalizedPhone)
             ->whereIn('role', ['member', 'unit_leader', 'zone_leader'])
             ->first();
 
-        if ($user && \Illuminate\Support\Facades\Hash::check($pin, $user->pin)) {
+        if ($user && Hash::check($pin, $user->pin)) {
             return $user;
         }
 
@@ -158,9 +156,9 @@ class User extends Authenticatable
             return $phone;
         }
         
-        // If it's 10 digits and starts with 07, convert to 250 + 9 digits
+        // If it's 10 digits and starts with 07, add 250 prefix
         if (strlen($phone) === 10 && strpos($phone, '07') === 0) {
-            return '250' . substr($phone, 1); // Remove the leading 0 and add 250
+            return '250' . $phone;
         }
         
         // If it's 9 digits and starts with 7, add 250 prefix

@@ -35,50 +35,22 @@ export default function AdminLogin({ status, canResetPassword }: AdminLoginProps
         clearSessionOnLoginPage();
     }, []);
 
-    // Add debugging on component mount
-    useEffect(() => {
-        console.log('AdminLogin component mounted');
-        console.log('Current URL:', window.location.href);
-        
-        // Check if user is already authenticated
-        const checkAuthStatus = async () => {
-            try {
-                const response = await fetch('/api/test-auth', {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                console.log('Auth status check:', data);
-                
-                if (data.authenticated && data.user?.role === 'admin') {
-                    console.log('User is already authenticated as admin, redirecting to dashboard');
-                    window.location.href = '/koabiga/admin/dashboard';
-                }
-            } catch (error) {
-                console.log('Error checking auth status:', error);
-            }
-        };
-        
-        checkAuthStatus();
-    }, []);
-
     const submit: FormEventHandler = async (e) => {
         e.preventDefault();
         setGeneralError(null);
         setIsLoading(true);
         
-        console.log('Admin login form submitted');
-        
         try {
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            
             // Use Laravel session authentication
             const response = await fetch('/api/admin/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || '',
                 },
                 body: JSON.stringify({
                     email: data.email,
@@ -88,13 +60,10 @@ export default function AdminLogin({ status, canResetPassword }: AdminLoginProps
                 credentials: 'include', // Include cookies for session
             });
 
-            console.log('Login response status:', response.status);
-
             if (response.ok) {
                 const result = await response.json();
-                console.log('Login response:', result);
                 
-                if (result.success) {
+                if (result.success && result.user) {
                     // Create unified user data
                     const authUser = {
                         id: result.user.id,
@@ -110,16 +79,13 @@ export default function AdminLogin({ status, canResetPassword }: AdminLoginProps
                     // Use unified login function
                     login(authUser);
                     
-                    console.log('Login successful, user data stored:', authUser);
-                    console.log('Redirecting to dashboard');
-                    // Use direct window location for reliable redirect
+                    // Use full page reload to ensure cookies are sent
                     window.location.href = '/koabiga/admin/dashboard';
                 } else {
                     setGeneralError(result.message || 'Login failed');
                 }
             } else {
                 const errorData = await response.json();
-                console.log('Login error response:', errorData);
                 setGeneralError(errorData.message || 'Login failed');
             }
         } catch (err) {
@@ -137,11 +103,7 @@ export default function AdminLogin({ status, canResetPassword }: AdminLoginProps
                 <div className="w-full max-w-md rounded-xl bg-white/80 backdrop-blur-sm p-8 shadow-xl border border-emerald-700 dark:bg-gray-900/80 dark:border-emerald-800">
                     <div className="text-center mb-6">
                         <div className="flex justify-center mb-4">
-                            <img 
-                                src="/logo.png" 
-                                alt="Koabiga Logo" 
-                                className="h-16 w-16 rounded-lg object-cover shadow-lg"
-                            />
+                            <img src="/logo.png" alt="Koabiga Logo" className="h-12 w-12 rounded-lg shadow-lg" />
                         </div>
                     </div>
                     <h2 className="mb-6 text-center text-xl font-semibold text-gray-700 dark:text-gray-200">Admin Login</h2>
@@ -163,7 +125,6 @@ export default function AdminLogin({ status, canResetPassword }: AdminLoginProps
                         <div>
                             <div className="flex items-center mb-1">
                                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-200">Password</label>
-                                <Link href={route('password.request')} className="ml-auto text-sm text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300">Forgot Password?</Link>
                             </div>
                             <div className="relative">
                                 <input

@@ -1,66 +1,122 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\ConfirmablePasswordController;
-use App\Http\Controllers\Auth\EmailVerificationNotificationController;
-use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+/*
+|--------------------------------------------------------------------------
+| Authentication Routes
+|--------------------------------------------------------------------------
+|
+| This file contains the authentication routes for the Koabiga platform.
+| All routes are properly secured and follow the role-based access control.
+|
+*/
+
+// Guest routes (no authentication required)
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
+    
+    // Welcome page - default landing page with member login form
+    Route::get('/', function () {
+        return Inertia::render('auth/welcome');
+    })->name('home');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
-
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
-
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
-
-    // Admin and Unit Leader dedicated login pages
-    Route::get('admin-login', function () {
+    // Admin Login Routes
+    Route::get('/admin-login', function () {
         return Inertia::render('auth/admin-login');
-    })->name('admin.login');
+    })->name('admin-login');
 
-    Route::get('unit-leader-login', function () {
-        return Inertia::render('auth/unit-leader-login');
-    })->name('unit-leader.login');
+    Route::post('/admin/login', [AuthController::class, 'adminLogin'])
+        ->name('admin.login');
 
-    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
-        ->name('password.request');
+    // Leaders Login Routes
+    Route::get('/leaders-login', function () {
+        return Inertia::render('auth/leaders-login');
+    })->name('leaders-login');
 
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
-        ->name('password.email');
+    Route::post('/leaders/login', [AuthController::class, 'leadersLogin'])
+        ->name('leaders.login');
 
-    Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
-        ->name('password.reset');
+    // Member Login Routes (handled on welcome page)
+    Route::post('/member/login', [AuthController::class, 'memberLogin'])
+        ->name('member.login');
 
-    Route::post('reset-password', [NewPasswordController::class, 'store'])
-        ->name('password.store');
+    // Universal login route (redirects to welcome)
+    Route::get('/login', function () {
+        return redirect()->route('home');
+    })->name('login');
+
+    // Universal login POST (handles all roles)
+    Route::post('/login', [AuthController::class, 'login'])
+        ->name('login.post');
+
+    // Password reset routes (disabled for this system - users added by admins)
+    Route::get('/forgot-password', function () {
+        return Inertia::render('auth/forgot-password');
+    })->name('password.request');
+
+    Route::post('/forgot-password', function () {
+        return back()->with('status', 'Password reset is not available. Contact your administrator.');
+    })->name('password.email');
+
+    Route::get('/reset-password/{token}', function () {
+        return redirect()->route('home')->with('error', 'Password reset is not available.');
+    })->name('password.reset');
+
+    Route::post('/reset-password', function () {
+        return back()->with('error', 'Password reset is not available.');
+    })->name('password.store');
 });
 
+// Authenticated routes
 Route::middleware('auth')->group(function () {
-    Route::get('verify-email', EmailVerificationPromptController::class)
-        ->name('verification.notice');
-
-    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1'])
-        ->name('verification.verify');
-
-    Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-        ->middleware('throttle:6,1')
-        ->name('verification.send');
-
-    Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])
-        ->name('password.confirm');
-
-    Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
-
-    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
+    
+    // Logout route
+    Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout');
+
+    // Password confirmation (if needed for sensitive operations)
+    Route::get('/confirm-password', function () {
+        return Inertia::render('auth/confirm-password');
+    })->name('password.confirm');
+
+    Route::post('/confirm-password', [AuthController::class, 'confirmPassword'])
+        ->name('password.confirm.post');
+
+    // Password update (for authenticated users)
+    Route::put('/password', [AuthController::class, 'updatePassword'])
+        ->name('password.update');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Authentication Flow Summary
+|--------------------------------------------------------------------------
+|
+| 1. Entry Point: / (Welcome Page)
+|    - Shows member login form
+|    - Links to admin and leader login pages
+|
+| 2. Admin Login: /admin-login
+|    - Email + Password
+|    - Redirects to /koabiga/admin/dashboard
+|
+| 3. Leader Login: /leaders-login
+|    - Phone + PIN
+|    - Redirects to /koabiga/leaders/dashboard
+|
+| 4. Member Login: / (Welcome Page)
+|    - Phone + PIN
+|    - Redirects to /koabiga/members/dashboard
+|
+| 5. No Public Registration
+|    - Admins register Leaders and Members
+|    - Leaders register Members
+|    - No self-registration
+|
+| 6. No Email Verification
+|    - All users are added by higher roles
+|    - No email-based password reset
+|
+*/

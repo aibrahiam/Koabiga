@@ -129,4 +129,20 @@ class FeeRule extends Model
         $this->update(['is_deleted' => false]);
         return parent::restore();
     }
+
+    /**
+     * Get the fee applications for this rule
+     */
+    public function feeApplications()
+    {
+        return $this->hasMany(FeeApplication::class);
+    }
+
+    /**
+     * Get the unit assignments for this rule
+     */
+    public function unitAssignments()
+    {
+        return $this->hasMany(FeeRuleUnitAssignment::class);
+    }
 }

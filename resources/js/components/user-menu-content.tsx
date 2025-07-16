@@ -18,7 +18,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
         
         try {
             // Call logout endpoint
-            const response = await fetch('/logout', {
+            await fetch('/logout', {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -26,35 +26,13 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                     'Content-Type': 'application/json'
                 }
             });
-            
-            const result = await response.json();
-            
-            // If backend signals to clear frontend session, do it
-            if (result.clearFrontendSession) {
-                logout();
-            }
         } catch (error) {
             console.error('Logout error:', error);
-            // Even if backend call fails, clear frontend session
-            logout();
         }
         
+        logout();
         // Redirect to home page after logout
         window.location.href = '/';
-    };
-
-    // Get settings link based on user role
-    const getSettingsLink = () => {
-        switch (user.role) {
-            case 'admin':
-                return '/koabiga/admin/settings';
-            case 'unit_leader':
-                return '/koabiga/unit-leader/settings';
-            case 'member':
-                return '/koabiga/member/settings';
-            default:
-                return '/settings';
-        }
     };
 
     return (
@@ -67,7 +45,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                    <a href={getSettingsLink()} className="block w-full text-left" onClick={cleanup}>
+                    <a href="/koabiga/unit-leader/settings" className="block w-full text-left" onClick={cleanup}>
                         <Settings className="mr-2" />
                         Settings
                     </a>
