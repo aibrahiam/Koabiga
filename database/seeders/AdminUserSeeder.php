@@ -17,7 +17,6 @@ class AdminUserSeeder extends Seeder
         User::create([
             'christian_name' => 'Admin',
             'family_name' => 'User',
-            'name' => 'Admin User',
             'email' => 'admin@koabiga.com',
             'password' => 'admin123', // Will be hashed by model events
             'role' => 'admin',
@@ -29,7 +28,6 @@ class AdminUserSeeder extends Seeder
         User::create([
             'christian_name' => 'Unit',
             'family_name' => 'Leader',
-            'name' => 'Unit Leader',
             'phone' => '1234567890',
             'id_passport' => 'LEADER001',
             'national_id' => 'LEADER123456',
@@ -44,7 +42,6 @@ class AdminUserSeeder extends Seeder
         User::create([
             'christian_name' => 'Test',
             'family_name' => 'Member',
-            'name' => 'Test Member',
             'phone' => '1234567891',
             'id_passport' => 'MEMBER001',
             'national_id' => 'MEMBER123456',

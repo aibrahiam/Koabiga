@@ -18,7 +18,6 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
         'christian_name',
         'family_name',
         'email',
@@ -183,7 +182,7 @@ class User extends Authenticatable
     public function getFullNameAttribute(): string
     {
         $parts = array_filter([$this->christian_name, $this->family_name]);
-        return !empty($parts) ? implode(' ', $parts) : $this->name;
+        return !empty($parts) ? implode(' ', $parts) : 'Unknown User';
     }
 
     /**
@@ -191,7 +190,7 @@ class User extends Authenticatable
      */
     public function getDisplayNameAttribute(): string
     {
-        return $this->full_name ?: $this->name;
+        return $this->full_name ?: 'Unknown User';
     }
 
     /**
