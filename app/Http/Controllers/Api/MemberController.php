@@ -32,32 +32,32 @@ class MemberController extends Controller
                 ], 403);
             }
 
-            // Get assigned land area
-            $assignedLand = Land::where('user_id', $user->id)->sum('area');
+            // Get assigned land area with safe fallback
+            $assignedLand = Land::where('user_id', $user->id)->sum('area') ?? 0;
 
-            // Get active crops count
+            // Get active crops count (crops table doesn't have status column)
             $activeCrops = Crop::whereHas('land', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
-            })->where('status', 'active')->count();
+            })->count() ?? 0;
 
-            // Get monthly produce
+            // Get monthly produce with safe fallback
             $monthlyProduce = Produce::whereHas('crop.land', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             })->whereMonth('created_at', now()->month)
               ->whereYear('created_at', now()->year)
-              ->sum('quantity');
+              ->sum('quantity') ?? 0;
 
-            // Get this month's fees
+            // Get this month's fees with safe fallback
             $thisMonthFees = MemberFee::where('user_id', $user->id)
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->where('status', 'paid')
-                ->sum('amount');
+                ->sum('amount') ?? 0;
 
-            // Get pending reports
+            // Get pending reports with safe fallback
             $pendingReports = Report::where('user_id', $user->id)
                 ->where('status', 'pending')
-                ->count();
+                ->count() ?? 0;
 
             // Mock upcoming tasks count
             $upcomingTasks = 3; // Mock data
@@ -96,7 +96,7 @@ class MemberController extends Controller
                 ], 403);
             }
 
-            // Get recent activities for this member
+            // Get recent activities for this member with safe fallback
             $activities = ActivityLog::where('user_id', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->limit(10)
@@ -104,11 +104,11 @@ class MemberController extends Controller
                 ->map(function ($activity) {
                     return [
                         'id' => $activity->id,
-                        'action' => $activity->description,
+                        'action' => $activity->description ?? 'Activity',
                         'time' => $activity->created_at->diffForHumans(),
-                        'type' => $activity->action,
+                        'type' => $activity->action ?? 'general',
                     ];
-                });
+                }) ?? [];
 
             return response()->json([
                 'success' => true,
@@ -137,7 +137,7 @@ class MemberController extends Controller
                 ], 403);
             }
 
-            // Get upcoming fees for this member
+            // Get upcoming fees for this member with safe fallback
             $fees = MemberFee::where('user_id', $user->id)
                 ->where('status', '!=', 'paid')
                 ->with('feeRule')
@@ -149,14 +149,14 @@ class MemberController extends Controller
                         'id' => $fee->id,
                         'title' => $fee->feeRule ? $fee->feeRule->name : 'Fee',
                         'dueDate' => $fee->created_at->addDays(30)->format('Y-m-d'), // Mock due date
-                        'amount' => $fee->amount,
-                        'status' => $fee->status,
+                        'amount' => $fee->amount ?? 0,
+                        'status' => $fee->status ?? 'pending',
                         'fee_rule' => $fee->feeRule ? [
-                            'name' => $fee->feeRule->name,
-                            'type' => $fee->feeRule->type,
+                            'name' => $fee->feeRule->name ?? 'Unknown',
+                            'type' => $fee->feeRule->type ?? 'general',
                         ] : null,
                     ];
-                });
+                }) ?? [];
 
             return response()->json([
                 'success' => true,
@@ -191,13 +191,13 @@ class MemberController extends Controller
                 ->map(function ($land) {
                     return [
                         'id' => $land->id,
-                        'land_number' => $land->land_number,
-                        'area' => $land->area,
+                        'land_number' => $land->land_number ?? 'Unknown',
+                        'area' => $land->area ?? 0,
                         'zone' => $land->zone ? $land->zone->name : 'Unknown',
                         'unit_id' => $land->unit_id,
                         'unit' => $land->unit ? $land->unit->name : 'Unknown',
                     ];
-                });
+                }) ?? [];
 
             return response()->json([
                 'success' => true,
@@ -233,12 +233,12 @@ class MemberController extends Controller
             ->map(function ($crop) {
                 return [
                     'id' => $crop->id,
-                    'name' => $crop->name,
-                    'variety' => $crop->variety,
-                    'status' => $crop->status,
+                    'name' => $crop->name ?? 'Unknown Crop',
+                    'variety' => $crop->variety ?? 'Unknown',
+                    'status' => 'active', // Default since crops table doesn't have status
                     'land_id' => $crop->land_id,
                 ];
-            });
+            }) ?? [];
 
             return response()->json([
                 'success' => true,
@@ -275,11 +275,11 @@ class MemberController extends Controller
                 return [
                     'id' => $produce->id,
                     'crop_id' => $produce->crop_id,
-                    'quantity' => $produce->quantity,
-                    'unit_of_measure' => $produce->unit_of_measure,
+                    'quantity' => $produce->quantity ?? 0,
+                    'unit_of_measure' => $produce->unit_of_measure ?? 'kg',
                     'harvest_date' => $produce->harvest_date,
                 ];
-            });
+            }) ?? [];
 
             return response()->json([
                 'success' => true,

@@ -164,7 +164,6 @@ export default function MemberDashboard() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Member Dashboard</h1>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Track your agricultural activities and progress</p>
                     </div>
                     <Badge variant="secondary" className="text-xs sm:text-sm py-1 px-2 sm:px-3">Member - Unit A</Badge>
                 </div>
@@ -222,21 +221,26 @@ export default function MemberDashboard() {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
-                    {quickActions.map((action) => (
-                        <Link key={action.title} href={action.href} className="contents">
-                            <Card
-                                className="cursor-pointer hover:shadow-md transition-shadow rounded-lg flex flex-col items-center justify-center py-3 px-2 sm:py-4 sm:px-3 min-h-[90px] sm:min-h-[110px]"
-                            >
-                                <div className={`flex flex-col items-center justify-center w-full`}>
-                                    <div className={`flex items-center justify-center rounded-full ${action.color} mb-2`} style={{ width: 44, height: 44 }}>
-                                        <action.icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                <div className="space-y-3 sm:space-y-4">
+                    <div>
+                        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Quick Actions</h2>
+                    </div>
+                    <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+                        {quickActions.map((action) => (
+                            <Link key={action.title} href={action.href} className="contents">
+                                <Card
+                                    className="cursor-pointer hover:shadow-md transition-shadow rounded-lg flex flex-col items-center justify-center py-3 px-2 sm:py-4 sm:px-3 min-h-[90px] sm:min-h-[110px]"
+                                >
+                                    <div className={`flex flex-col items-center justify-center w-full`}>
+                                        <div className={`flex items-center justify-center rounded-full ${action.color} mb-2`} style={{ width: 44, height: 44 }}>
+                                            <action.icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                                        </div>
+                                        <span className="block text-xs sm:text-sm font-semibold text-center mt-1">{action.title}</span>
                                     </div>
-                                    <span className="block text-xs sm:text-sm font-semibold text-center mt-1">{action.title}</span>
-                                </div>
-                            </Card>
-                        </Link>
-                    ))}
+                                </Card>
+                            </Link>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Content Grid */}
