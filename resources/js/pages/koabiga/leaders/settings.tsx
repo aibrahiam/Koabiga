@@ -96,12 +96,12 @@ export default function UnitLeaderSettings() {
     useEffect(() => {
         if (user) {
             setProfileData({
-                christian_name: user.christian_name || '',
-                family_name: user.family_name || '',
-                email: user.email || '',
-                phone: user.phone || '',
-                id_passport: user.id_passport || '',
-                bio: user.bio || ''
+                christian_name: user?.christian_name || '',
+                family_name: user?.family_name || '',
+                email: user?.email || '',
+                phone: user?.phone || '',
+                id_passport: (user as any)?.id_passport || '',
+                bio: (user as any)?.bio || ''
             });
         }
     }, [user]);
@@ -594,7 +594,7 @@ export default function UnitLeaderSettings() {
                                     <div className="flex justify-between text-sm">
                                         <span>Member Since:</span>
                                         <span className="font-medium">
-                                            {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                                            {(user as any)?.created_at ? new Date((user as any).created_at).toLocaleDateString() : 'N/A'}
                                         </span>
                                     </div>
                                 </div>

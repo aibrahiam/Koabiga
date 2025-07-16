@@ -8,40 +8,70 @@ use Illuminate\Http\JsonResponse;
 use App\Models\Zone;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ZoneController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Zone::with('leader')
-            ->orderBy('created_at', 'desc');
+        try {
+            $query = Zone::with('leader')
+                ->orderBy('created_at', 'desc');
 
-        // Filter by status if provided
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
+            // Filter by status if provided
+            if ($request->has('status') && $request->status) {
+                $query->where('status', $request->status);
+            }
 
-        // Search by name or code
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
+            // Search by name or code
+            if ($request->has('search') && $request->search) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('code', 'like', "%{$search}%");
+                });
+            }
+
+            $zones = $query->get()->map(function ($zone) {
+                return [
+                    'id' => $zone->id,
+                    'name' => $zone->name,
+                    'code' => $zone->code,
+                    'leader' => $zone->leader ? [
+                        'id' => $zone->leader->id,
+                        'name' => $zone->leader->christian_name . ' ' . $zone->leader->family_name,
+                        'email' => $zone->leader->email,
+                        'phone' => $zone->leader->phone,
+                    ] : null,
+                    'member_count' => $zone->units()->withCount('members')->get()->sum('members_count'),
+                    'unit_count' => $zone->units()->count(),
+                    'status' => $zone->status,
+                    'created_at' => $zone->created_at->toISOString(),
+                    'updated_at' => $zone->updated_at->toISOString(),
+                    'description' => $zone->description,
+                    'location' => $zone->location,
+                    'performance_score' => 85, // Placeholder - should be calculated based on actual metrics
+                    'last_activity' => $zone->updated_at->diffForHumans(),
+                ];
             });
+
+            return response()->json([
+                'success' => true,
+                'data' => $zones,
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $zones->count(),
+                    'total' => $zones->count(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Zone index error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch zones: ' . $e->getMessage()
+            ], 500);
         }
-
-        $zones = $query->paginate($request->get('per_page', 15));
-
-        return response()->json([
-            'success' => true,
-            'data' => $zones->items(),
-            'pagination' => [
-                'current_page' => $zones->currentPage(),
-                'last_page' => $zones->lastPage(),
-                'per_page' => $zones->perPage(),
-                'total' => $zones->total(),
-            ]
-        ]);
     }
 
     public function store(Request $request): JsonResponse

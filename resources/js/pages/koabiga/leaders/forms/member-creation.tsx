@@ -35,6 +35,7 @@ interface FormData {
     christian_name: string;
     family_name: string;
     phone: string;
+    secondary_phone: string;
     id_passport: string;
     pin: string;
     unit_id: string;
@@ -44,6 +45,7 @@ interface MemberData {
     christian_name: string;
     family_name: string;
     phone: string;
+    secondary_phone?: string;
     id_passport: string;
     role: string;
     unit_id: number;
@@ -71,6 +73,7 @@ export default function MemberCreationForm() {
         christian_name: '',
         family_name: '',
         phone: '',
+        secondary_phone: '',
         id_passport: '',
         pin: '12123', // Default PIN
         unit_id: ''
@@ -123,6 +126,15 @@ export default function MemberCreationForm() {
             errors.phone = 'Please enter a valid Rwandan phone number (07XXXXXXXX)';
         }
 
+        if (formData.secondary_phone && formData.secondary_phone.trim()) {
+            if (!/^07\d{8}$/.test(formData.secondary_phone.replace(/\s/g, ''))) {
+                errors.secondary_phone = 'Please enter a valid Rwandan phone number (07XXXXXXXX)';
+            }
+            if (formData.secondary_phone === formData.phone) {
+                errors.secondary_phone = 'Secondary phone number cannot be the same as primary phone number';
+            }
+        }
+
         if (!formData.id_passport.trim()) {
             errors.id_passport = 'ID/Passport number is required';
         }
@@ -152,6 +164,7 @@ export default function MemberCreationForm() {
                 christian_name: formData.christian_name,
                 family_name: formData.family_name,
                 phone: formData.phone,
+                secondary_phone: formData.secondary_phone || undefined,
                 id_passport: formData.id_passport,
                 role: 'member',
                 unit_id: parseInt(formData.unit_id),
@@ -167,6 +180,7 @@ export default function MemberCreationForm() {
                     christian_name: '',
                     family_name: '',
                     phone: '',
+                    secondary_phone: '',
                     id_passport: '',
                     pin: '12123', // Reset to default PIN
                     unit_id: ''
@@ -292,25 +306,47 @@ export default function MemberCreationForm() {
                                             Contact Information
                                         </h3>
                                         <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="phone">Phone Number *</Label>
-                                                <Input
-                                                    id="phone"
-                                                    name="phone"
-                                                    type="tel"
-                                                    autoComplete="tel"
-                                                    value={formData.phone}
-                                                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                                                    placeholder="07XXXXXXXX"
-                                                    className={formErrors.phone ? 'border-red-500' : ''}
-                                                    required
-                                                />
-                                                {formErrors.phone && (
-                                                    <p className="text-sm text-red-600">{formErrors.phone}</p>
-                                                )}
-                                                <p className="text-xs text-muted-foreground">
-                                                    Use Rwandan format: 07XXXXXXXX (10 digits starting with 07)
-                                                </p>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="phone">Phone Number *</Label>
+                                                    <Input
+                                                        id="phone"
+                                                        name="phone"
+                                                        type="tel"
+                                                        autoComplete="tel"
+                                                        value={formData.phone}
+                                                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                                        placeholder="07XXXXXXXX"
+                                                        className={formErrors.phone ? 'border-red-500' : ''}
+                                                        required
+                                                    />
+                                                    {formErrors.phone && (
+                                                        <p className="text-sm text-red-600">{formErrors.phone}</p>
+                                                    )}
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Use Rwandan format: 07XXXXXXXX (10 digits starting with 07)
+                                                    </p>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="secondary_phone">Secondary Phone (Optional)</Label>
+                                                    <Input
+                                                        id="secondary_phone"
+                                                        name="secondary_phone"
+                                                        type="tel"
+                                                        autoComplete="tel"
+                                                        value={formData.secondary_phone}
+                                                        onChange={(e) => setFormData({...formData, secondary_phone: e.target.value})}
+                                                        placeholder="07XXXXXXXX"
+                                                        className={formErrors.secondary_phone ? 'border-red-500' : ''}
+                                                    />
+                                                    {formErrors.secondary_phone && (
+                                                        <p className="text-sm text-red-600">{formErrors.secondary_phone}</p>
+                                                    )}
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Can be used for login if different from primary phone
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

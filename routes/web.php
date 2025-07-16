@@ -36,71 +36,29 @@ Route::get('/dashboard', function () {
 
 // Koabiga Admin Routes (Protected with authentication and admin role)
 Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('dashboard', function () {
-        // Get zone statistics
-        $zoneStats = [
-            'total_zones' => \App\Models\Zone::count(),
-            'active_zones' => \App\Models\Zone::where('status', 'active')->count(),
-            'inactive_zones' => \App\Models\Zone::where('status', 'inactive')->count(),
-            'zones_with_leaders' => \App\Models\Zone::whereNotNull('leader_id')->count(),
-            'zones_without_leaders' => \App\Models\Zone::whereNull('leader_id')->count(),
-        ];
-
-        // Get recent zones
-        $recentZones = \App\Models\Zone::with('leader')
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($zone) {
-                return [
-                    'id' => $zone->id,
-                    'name' => $zone->name,
-                    'code' => $zone->code,
-                    'leader' => $zone->leader ? $zone->leader->christian_name . ' ' . $zone->leader->family_name : 'No Leader',
-                    'status' => $zone->status,
-                    'created_at' => $zone->created_at->diffForHumans(),
-                ];
-            });
-
-        return Inertia::render('koabiga/admin/admin_dashboard', [
-            'zoneStats' => $zoneStats,
-            'recentZones' => $recentZones,
-        ]);
-    })->name('dashboard');
+    Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
     
     // Members Management
-    Route::get('members', function () {
-        return Inertia::render('koabiga/admin/members/members');
-    })->name('members');
+    Route::get('members', [\App\Http\Controllers\Admin\MemberController::class, 'index'])->name('members');
     
-    Route::get('members/create-member', function () {
-        return Inertia::render('koabiga/admin/members/create-member');
-    })->name('members.create');
+    Route::get('members/create', [\App\Http\Controllers\Admin\MemberController::class, 'create'])->name('members.create');
 
-    Route::get('members/{id}', function ($id) {
-        return Inertia::render('koabiga/admin/members/view-member', ['id' => $id]);
-    })->name('members.show');
+    Route::get('members/{id}', [\App\Http\Controllers\Admin\MemberController::class, 'show'])->name('members.show');
 
-    Route::get('members/{id}/edit', function ($id) {
-        return Inertia::render('koabiga/admin/members/edit-member', ['id' => $id]);
-    })->name('members.edit');
+    Route::get('members/{id}/edit', [\App\Http\Controllers\Admin\MemberController::class, 'edit'])->name('members.edit');
     
     // Units Management
-    Route::get('units', function () {
-        return Inertia::render('koabiga/admin/units/units');
-    })->name('units');
+    Route::get('units', [\App\Http\Controllers\Admin\UnitController::class, 'index'])->name('units');
     
-    Route::get('units/create_unit', function () {
-        return Inertia::render('koabiga/admin/units/create_unit');
-    })->name('units.create_unit');
-
-    Route::get('units/{id}', function ($id) {
-        return Inertia::render('koabiga/admin/units/[id]', ['id' => $id]);
-    })->name('units.show');
-
-    Route::get('units/{id}/edit', function ($id) {
-        return Inertia::render('koabiga/admin/units/[id]/edit', ['id' => $id]);
-    })->name('units.edit');
+    Route::resource('units', \App\Http\Controllers\Admin\UnitController::class)->names([
+        'index' => 'units.index',
+        'create' => 'units.create',
+        'store' => 'units.store',
+        'show' => 'units.show',
+        'edit' => 'units.edit',
+        'update' => 'units.update',
+        'destroy' => 'units.destroy',
+    ]);
 
     Route::get('units/{id}/members', function ($id) {
         return Inertia::render('koabiga/admin/units/[id]/members', [
@@ -197,149 +155,26 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
     })->name('system-metrics');
 
     // Zone Management
-    Route::get('zones', function () {
-        $zones = \App\Models\Zone::with('leader')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($zone) {
-                return [
-                    'id' => $zone->id,
-                    'name' => $zone->name,
-                    'code' => $zone->code,
-                    'leader' => $zone->leader ? [
-                        'id' => $zone->leader->id,
-                        'name' => $zone->leader->christian_name . ' ' . $zone->leader->family_name,
-                        'email' => $zone->leader->email,
-                        'phone' => $zone->leader->phone,
-                    ] : null,
-                    'member_count' => $zone->units()->withCount('members')->get()->sum('members_count'),
-                    'unit_count' => $zone->units()->count(),
-                    'status' => $zone->status,
-                    'created_at' => $zone->created_at->toISOString(),
-                    'updated_at' => $zone->updated_at->toISOString(),
-                    'description' => $zone->description,
-                    'location' => $zone->location ?? null,
-                    'performance_score' => rand(65, 95), // Placeholder - should be calculated based on actual metrics
-                    'last_activity' => $zone->updated_at->diffForHumans(),
-                ];
-            });
+    Route::resource('zones', \App\Http\Controllers\ZoneController::class)->names([
+        'index' => 'zones.index',
+        'create' => 'zones.create',
+        'store' => 'zones.store',
+        'show' => 'zones.show',
+        'edit' => 'zones.edit',
+        'update' => 'zones.update',
+        'destroy' => 'zones.destroy',
+    ]);
 
-        $stats = [
-            'total_zones' => \App\Models\Zone::count(),
-            'active_zones' => \App\Models\Zone::where('status', 'active')->count(),
-            'inactive_zones' => \App\Models\Zone::where('status', 'inactive')->count(),
-            'total_members' => \App\Models\User::where('role', 'member')->count(),
-            'total_units' => \App\Models\Unit::count(),
-            'average_performance' => 85, // Placeholder - should be calculated based on actual metrics
-        ];
-
-        $filters = [
-            'status' => request('status', ''),
-            'leader' => request('leader', ''),
-            'search' => request('search', ''),
-        ];
-
-        return Inertia::render('koabiga/admin/zones/zone', [
-            'zones' => $zones,
-            'stats' => $stats,
-            'filters' => $filters,
-        ]);
-    })->name('zones');
-
-    Route::get('zones/create', function () {
-        // Get available leaders for selection
-        $availableLeaders = \App\Models\User::where('role', 'unit_leader')
-            ->whereNull('zone_id')
-            ->select('id', 'christian_name', 'family_name', 'email', 'phone')
-            ->get()
-            ->map(function ($leader) {
-                return [
-                    'id' => $leader->id,
-                    'name' => $leader->christian_name . ' ' . $leader->family_name,
-                    'email' => $leader->email,
-                    'phone' => $leader->phone,
-                ];
-            });
-
-        return Inertia::render('koabiga/admin/zones/create-zone', [
-            'availableLeaders' => $availableLeaders,
-        ]);
-    })->name('zones.create');
-
-    Route::get('zones/{id}', function ($id) {
-        $zone = \App\Models\Zone::with('leader', 'units.members')->findOrFail($id);
-        
-        $zoneData = [
-            'id' => $zone->id,
-            'name' => $zone->name,
-            'code' => $zone->code,
-            'leader' => $zone->leader ? [
-                'id' => $zone->leader->id,
-                'name' => $zone->leader->christian_name . ' ' . $zone->leader->family_name,
-                'email' => $zone->leader->email,
-                'phone' => $zone->leader->phone,
-            ] : null,
-            'member_count' => $zone->units()->withCount('members')->get()->sum('members_count'),
-            'unit_count' => $zone->units()->count(),
-            'status' => $zone->status,
-            'created_at' => $zone->created_at->toISOString(),
-            'updated_at' => $zone->updated_at->toISOString(),
-            'description' => $zone->description,
-            'location' => $zone->location ?? null,
-            'performance_score' => rand(65, 95),
-            'last_activity' => $zone->updated_at->diffForHumans(),
-            'units' => $zone->units->map(function ($unit) {
-                return [
-                    'id' => $unit->id,
-                    'name' => $unit->name,
-                    'code' => $unit->code,
-                    'member_count' => $unit->members()->count(),
-                    'leader' => $unit->leader ? [
-                        'id' => $unit->leader->id,
-                        'name' => $unit->leader->christian_name . ' ' . $unit->leader->family_name,
-                    ] : null,
-                ];
-            }),
-        ];
-
-        return Inertia::render('koabiga/admin/zones/view-zone', [
-            'zone' => $zoneData,
-        ]);
-    })->name('zones.show');
-
-    Route::get('zones/{id}/edit', function ($id) {
-        $zone = \App\Models\Zone::with('leader')->findOrFail($id);
-        
-        $zoneData = [
-            'id' => $zone->id,
-            'name' => $zone->name,
-            'code' => $zone->code,
-            'leader_id' => $zone->leader_id,
-            'status' => $zone->status,
-            'description' => $zone->description,
-            'location' => $zone->location ?? null,
-        ];
-
-        // Get available leaders for selection
-        $availableLeaders = \App\Models\User::where('role', 'unit_leader')
-            ->whereNull('zone_id')
-            ->orWhere('zone_id', $zone->id)
-            ->select('id', 'christian_name', 'family_name', 'email', 'phone')
-            ->get()
-            ->map(function ($leader) {
-                return [
-                    'id' => $leader->id,
-                    'name' => $leader->christian_name . ' ' . $leader->family_name,
-                    'email' => $leader->email,
-                    'phone' => $leader->phone,
-                ];
-            });
-
-        return Inertia::render('koabiga/admin/zones/edit-zone', [
-            'zone' => $zoneData,
-            'availableLeaders' => $availableLeaders,
-        ]);
-    })->name('zones.edit');
+    // Members Management
+    Route::resource('members', \App\Http\Controllers\Admin\MemberController::class)->names([
+        'index' => 'members.index',
+        'create' => 'members.create',
+        'store' => 'members.store',
+        'edit' => 'members.edit',
+        'update' => 'members.update',
+        'destroy' => 'members.destroy',
+    ]);
+    Route::get('members/export', [\App\Http\Controllers\Admin\MemberController::class, 'export'])->name('members.export');
 });
 
 // Koabiga Members Routes

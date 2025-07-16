@@ -85,9 +85,9 @@ export default function CreateZone({ availableLeaders = [] }: CreateZoneProps) {
         setIsSubmitting(true);
 
         try {
-            await router.post('/api/admin/zones', {
+            await router.post('/koabiga/admin/zones', {
                 ...formData,
-                leader_id: formData.leader_id || null
+                leader_id: formData.leader_id === 'none' ? null : formData.leader_id
             }, {
                 onSuccess: () => {
                     router.visit('/koabiga/admin/zones');
@@ -235,18 +235,25 @@ export default function CreateZone({ availableLeaders = [] }: CreateZoneProps) {
                                             <SelectValue placeholder="Select a leader (optional)" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">No Leader Assigned</SelectItem>
-                                            {availableLeaders.map((leader) => (
-                                                <SelectItem key={leader.id} value={leader.id.toString()}>
-                                                    <div className="flex items-center space-x-2">
-                                                        <User className="w-4 h-4" />
-                                                        <span>{leader.name}</span>
-                                                        <Badge variant="outline" className="text-xs">
-                                                            {leader.email}
-                                                        </Badge>
-                                                    </div>
+                                            <SelectItem value="none">No Leader Assigned</SelectItem>
+                                            {availableLeaders
+                                                .filter(leader => leader && leader.id && leader.name)
+                                                .map((leader) => (
+                                                    <SelectItem key={leader.id} value={String(leader.id)}>
+                                                        <div className="flex items-center space-x-2">
+                                                            <User className="w-4 h-4" />
+                                                            <span>{leader.name}</span>
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {leader.email}
+                                                            </Badge>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            {availableLeaders.filter(leader => leader && leader.id && leader.name).length === 0 && (
+                                                <SelectItem value="none" disabled>
+                                                    No available leaders
                                                 </SelectItem>
-                                            ))}
+                                            )}
                                         </SelectContent>
                                     </Select>
                                     {errors.leader_id && (

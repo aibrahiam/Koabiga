@@ -5,6 +5,11 @@ export interface Auth {
     user: User;
 }
 
+export interface PageProps {
+    auth: Auth;
+    [key: string]: unknown;
+}
+
 export interface BreadcrumbItem {
     title: string;
     href: string;
@@ -39,5 +44,15 @@ export interface User {
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
+    role: 'admin' | 'unit_leader' | 'zone_leader' | 'member';
+    christian_name?: string;
+    family_name?: string;
+    id_passport?: string;
+    phone?: string;
+    secondary_phone?: string;
+    bio?: string;
+    status?: string;
+    zone_id?: number | null;
+    unit_id?: number | null;
     [key: string]: unknown; // This allows for additional properties...
 }

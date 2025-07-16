@@ -23,11 +23,10 @@ Route::middleware('guest')->group(function () {
     })->name('home');
 
     // Admin Login Routes
-    Route::get('/admin-login', function () {
-        return Inertia::render('auth/admin-login');
-    })->name('admin-login');
+    Route::get('/admin-login', [\App\Http\Controllers\Auth\AdminLoginController::class, 'create'])
+        ->name('admin-login');
 
-    Route::post('/admin/login', [AuthController::class, 'adminLogin'])
+    Route::post('/admin/login', [\App\Http\Controllers\Auth\AdminLoginController::class, 'store'])
         ->name('admin.login');
 
     // Leaders Login Routes

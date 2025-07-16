@@ -21,12 +21,15 @@ class User extends Authenticatable
         'christian_name',
         'family_name',
         'id_passport',
+        'national_id',
         'email',
         'phone',
+        'secondary_phone',
         'pin',
         'password',
         'role',
         'status',
+        'gender',
         'unit_id',
         'zone_id',
         'last_activity_at',
@@ -54,7 +57,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'pin' => 'hashed',
         ];
     }
 
@@ -132,7 +134,10 @@ class User extends Authenticatable
         // Normalize phone number - handle both 10-digit and 12-digit formats
         $normalizedPhone = self::normalizePhoneNumber($phone);
         
-        $user = self::where('phone', $normalizedPhone)
+        $user = self::where(function ($query) use ($normalizedPhone) {
+                $query->where('phone', $normalizedPhone)
+                      ->orWhere('secondary_phone', $normalizedPhone);
+            })
             ->whereIn('role', ['member', 'unit_leader', 'zone_leader'])
             ->first();
 

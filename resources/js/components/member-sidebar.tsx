@@ -60,9 +60,11 @@ export function MemberSidebar() {
 
     const getUserInitials = () => {
         if (!user) return 'M';
-        const christianName = user.christian_name || '';
-        const familyName = user.family_name || '';
-        return `${christianName.charAt(0)}${familyName.charAt(0)}`.toUpperCase();
+        const christianName = (user.christian_name || '').toString();
+        const familyName = (user.family_name || '').toString();
+        const first = christianName.charAt(0) || '';
+        const last = familyName.charAt(0) || '';
+        return `${first}${last}`.toUpperCase() || 'M';
     };
 
     const getUserName = () => {
@@ -113,7 +115,7 @@ export function MemberSidebar() {
                                     {getUserName()}
                                 </p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                                    {user?.role || 'member'}
+                                    {(user?.role || 'member').toString()}
                                 </p>
                             </div>
                             <Button
@@ -141,7 +143,7 @@ export function MemberSidebar() {
                                 <DropdownMenuContent align="end" className="w-56">
                                     <DropdownMenuItem className="flex flex-col items-start p-3">
                                         <p className="text-sm font-medium">{getUserName()}</p>
-                                        <p className="text-xs text-gray-500 capitalize">{user?.role || 'member'}</p>
+                                        <p className="text-xs text-gray-500 capitalize">{(user?.role || 'member').toString()}</p>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={handleLogout} className="text-red-600 dark:text-red-400">
                                         <LogOut className="mr-2 h-4 w-4" />

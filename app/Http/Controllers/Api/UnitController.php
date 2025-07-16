@@ -173,4 +173,23 @@ class UnitController extends Controller
             'message' => 'Member removed from unit successfully'
         ]);
     }
+
+    public function statistics(): JsonResponse
+    {
+        $stats = [
+            'total' => Unit::count(),
+            'active' => Unit::where('status', 'active')->count(),
+            'inactive' => Unit::where('status', 'inactive')->count(),
+            'units_with_leaders' => Unit::whereNotNull('leader_id')->count(),
+            'units_without_leaders' => Unit::whereNull('leader_id')->count(),
+            'total_members' => User::where('role', 'member')->count(),
+            'assigned_members' => User::where('role', 'member')->whereNotNull('unit_id')->count(),
+            'unassigned_members' => User::where('role', 'member')->whereNull('unit_id')->count(),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $stats
+        ]);
+    }
 } 

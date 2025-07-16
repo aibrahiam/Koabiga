@@ -13,7 +13,6 @@ import {
     Eye,
     Edit,
     Trash2,
-    Plus,
     MapPin,
     Activity,
     AlertTriangle,
@@ -23,12 +22,10 @@ import {
     CheckCircle,
     XCircle,
     Shield,
-    ArrowRight,
     Sprout,
     Package,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
 
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -37,6 +34,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
+import { useAuth } from '@/contexts/AuthContext';
+import { AuthSync } from '@/components/auth-sync';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -72,22 +71,7 @@ interface SystemStats {
     };
 }
 
-interface ZoneStats {
-    total_zones: number;
-    active_zones: number;
-    inactive_zones: number;
-    zones_with_leaders: number;
-    zones_without_leaders: number;
-}
 
-interface RecentZone {
-    id: number;
-    name: string;
-    code: string;
-    leader: string;
-    status: string;
-    created_at: string;
-}
 
 interface DashboardMetrics {
     recent_activities: Array<{
@@ -150,26 +134,21 @@ interface UserPage {
     lastModified: string;
 }
 
-export default function Dashboard({ 
-    zoneStats = {
-        total_zones: 0,
-        active_zones: 0,
-        inactive_zones: 0,
-        zones_with_leaders: 0,
-        zones_without_leaders: 0,
-    },
-    recentZones = []
-}: { 
-    zoneStats?: ZoneStats;
-    recentZones?: RecentZone[];
-}) {
-    const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
-    const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
-    const [userPages, setUserPages] = useState<UserPage[]>([]);
-    const [loading, setLoading] = useState(true);
+interface DashboardProps {
+    systemStats: SystemStats;
+    dashboardMetrics: DashboardMetrics;
+    zoneStats?: any;
+}
 
-    // Get user role from auth context or session
-    const userRole = 'admin'; // This should come from your auth context
+export default function Dashboard({ systemStats: initialSystemStats, dashboardMetrics: initialDashboardMetrics, zoneStats }: DashboardProps) {
+    const [systemStats, setSystemStats] = useState<SystemStats | null>(initialSystemStats || null);
+    const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(initialDashboardMetrics || null);
+    const [userPages, setUserPages] = useState<UserPage[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    // Get user from auth context
+    const { user } = useAuth();
+    const userRole = user?.role || 'admin'; // Fallback to admin for safety
 
     const roleConfig = {
         admin: {
@@ -224,159 +203,10 @@ export default function Dashboard({
         }
     };
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                setLoading(true);
-                
-                // Fetch system stats
-                try {
-                    const statsResponse = await axios.get('/api/admin/system-metrics/current-stats');
-                    if (statsResponse.data.success) {
-                        setSystemStats(statsResponse.data.data);
-                    } else {
-                        throw new Error(statsResponse.data.message || 'Failed to fetch system stats');
-                    }
-                } catch (err) {
-                    console.log('System stats API not available, using fallback data');
-                    // Set fallback system stats
-                    setSystemStats({
-                        users: {
-                            total: 150,
-                            admin: 3,
-                            unit_leader: 12,
-                            member: 135,
-                            active_today: 45,
-                        },
-                        agriculture: {
-                            total_lands: 85,
-                            total_crops: 120,
-                            total_produce: 95,
-                            total_reports: 67,
-                        },
-                        system: {
-                            active_sessions: 23,
-                            activities_today: 156,
-                            unresolved_errors: 2,
-                            system_uptime: 99.8,
-                        },
-                        performance: {
-                            avg_response_time: 145,
-                            error_rate: 0.2,
-                            user_satisfaction: 96,
-                        },
-                    });
-                }
-                
-                // Fetch dashboard metrics
-                try {
-                    const metricsResponse = await axios.get('/api/admin/system-metrics/dashboard');
-                    if (metricsResponse.data.success) {
-                        setDashboardMetrics(metricsResponse.data.data);
-                    } else {
-                        throw new Error(metricsResponse.data.message || 'Failed to fetch dashboard metrics');
-                    }
-                } catch (err) {
-                    console.log('Dashboard metrics API not available, using fallback data');
-                    // Set fallback dashboard metrics
-                    setDashboardMetrics({
-                        recent_activities: [
-                            {
-                                id: 1,
-                                user: {
-                                    id: 1,
-                                    christian_name: 'Admin',
-                                    family_name: 'User',
-                                },
-                                action: 'login',
-                                description: 'Admin logged in successfully',
-                                created_at: new Date().toISOString(),
-                            },
-                        ],
-                        recent_reports: [
-                            {
-                                id: 1,
-                                title: 'Monthly Crop Report',
-                                status: 'pending',
-                                submitted_by: 'Unit A',
-                                submitted_at: new Date().toISOString(),
-                            },
-                        ],
-                        system_alerts: [
-                            {
-                                id: 1,
-                                type: 'warning',
-                                message: 'System maintenance scheduled for tomorrow',
-                                created_at: new Date().toISOString(),
-                            },
-                        ],
-                        recent_errors: [
-                            {
-                                id: 1,
-                                level: 'warning',
-                                message: 'Minor system warning',
-                                created_at: new Date().toISOString(),
-                                user: {
-                                    id: 1,
-                                    christian_name: 'Admin',
-                                    family_name: 'User',
-                                },
-                            },
-                        ],
-                        active_users: [
-                            {
-                                id: 1,
-                                last_activity_at: new Date().toISOString(),
-                                user: {
-                                    id: 1,
-                                    christian_name: 'Admin',
-                                    family_name: 'User',
-                                },
-                            },
-                        ],
-                        system_health: {
-                            uptime: 99.8,
-                            error_rate: 0.2,
-                            active_sessions: 23,
-                            total_users: 150,
-                        },
-                    });
-                }
-                
-                // Fetch user pages (if API exists)
-                try {
-                    const pagesResponse = await axios.get('/api/admin/pages');
-                    if (pagesResponse.data.success) {
-                        setUserPages(pagesResponse.data.data);
-                    }
-                } catch (err) {
-                    console.log('Pages API not available yet');
-                    setUserPages([]);
-                }
-                
-            } catch (err: any) {
-                console.error('Error fetching dashboard data:', err);
-                // setError(err.response?.data?.message || err.message || 'Failed to load dashboard data'); // Removed error state
-            } finally {
-                setLoading(false);
-            }
-        };
+    // Data is now passed as props from the backend controller
+    // No need for API calls in the frontend
 
-        fetchDashboardData();
-    }, []);
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'active':
-                return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Active</Badge>;
-            case 'draft':
-                return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Draft</Badge>;
-            case 'inactive':
-                return <Badge variant="outline" className="border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-400">Inactive</Badge>;
-            default:
-                return <Badge variant="outline">{status}</Badge>;
-        }
-    };
 
 
 
@@ -396,6 +226,7 @@ export default function Dashboard({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${config.title} - Koabiga`} />
+            <AuthSync />
             
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Header */}
@@ -501,90 +332,7 @@ export default function Dashboard({
                     </Card>
                 )}
 
-                {/* Zone Statistics - Admin Only */}
-                {userRole === 'admin' && (
-                    <Card className="border-green-200 dark:border-green-800">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
-                                <MapPin className="h-5 w-5" />
-                                Zone Management
-                            </CardTitle>
-                            <CardDescription className="text-green-600 dark:text-green-400">Overview of zone distribution and leadership</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid gap-4 md:grid-cols-5">
-                                <div className="text-center">
-                                    <div className="text-2xl font-bold text-emerald-600">{zoneStats.total_zones}</div>
-                                    <p className="text-sm text-muted-foreground">Total Zones</p>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-2xl font-bold text-green-600">{zoneStats.active_zones}</div>
-                                    <p className="text-sm text-muted-foreground">Active Zones</p>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-2xl font-bold text-orange-600">{zoneStats.inactive_zones}</div>
-                                    <p className="text-sm text-muted-foreground">Inactive Zones</p>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-2xl font-bold text-blue-600">{zoneStats.zones_with_leaders}</div>
-                                    <p className="text-sm text-muted-foreground">With Leaders</p>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-2xl font-bold text-red-600">{zoneStats.zones_without_leaders}</div>
-                                    <p className="text-sm text-muted-foreground">Need Leaders</p>
-                                </div>
-                            </div>
-                            
-                            {/* Recent Zones */}
-                            {recentZones.length > 0 && (
-                                <div className="mt-6">
-                                    <h4 className="text-sm font-medium text-green-700 dark:text-green-300 mb-3">Recent Zones</h4>
-                                    <div className="space-y-2">
-                                        {recentZones.slice(0, 3).map((zone) => (
-                                            <div key={zone.id} className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                                <div className="flex items-center space-x-3">
-                                                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                                                    <div>
-                                                        <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                                                            {zone.name} ({zone.code})
-                                                        </p>
-                                                        <p className="text-xs text-green-600 dark:text-green-400">
-                                                            Leader: {zone.leader}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <Badge 
-                                                        variant={zone.status === 'active' ? 'default' : 'secondary'}
-                                                        className={zone.status === 'active' 
-                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                                                        }
-                                                    >
-                                                        {zone.status}
-                                                    </Badge>
-                                                    <Link href={`/koabiga/admin/zones/${zone.id}`}>
-                                                        <Button variant="ghost" size="sm">
-                                                            <Eye className="w-3 h-3" />
-                                                        </Button>
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="mt-3 text-center">
-                                        <Link href="/koabiga/admin/zones">
-                                            <Button variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50 dark:text-green-400 dark:border-green-400 dark:hover:bg-green-900/20">
-                                                View All Zones
-                                                <ArrowRight className="w-3 h-3 ml-1" />
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                )}
+
 
                 {/* Quick Access */}
                 <div>
@@ -727,7 +475,9 @@ export default function Dashboard({
                                                 <p className="text-xs text-green-500 dark:text-green-400">Modified: {page.lastModified}</p>
                                             </div>
                                             <div className="flex items-center space-x-2">
-                                                {getStatusBadge(page.status)}
+                                                <Badge variant="outline" className="border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-400">
+                                                    {page.status}
+                                                </Badge>
                                                 <Link href={page.path}>
                                                     <Button size="sm" variant="outline" className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-900">
                                                         <Eye className="h-3 w-3" />

@@ -63,8 +63,8 @@ interface User {
     join_date: string;
     unit?: string;
     zone?: string;
-    unit_id?: number;
-    zone_id?: number;
+    unit_id?: number | null;
+    zone_id?: number | null;
 }
 
 interface Page {
@@ -79,6 +79,7 @@ interface Page {
     icon?: string;
     sort_order: number;
     is_public: boolean;
+    features?: string[];
 }
 
 export default function AdminPageManagement() {
@@ -261,7 +262,7 @@ export default function AdminPageManagement() {
                 setZones(zonesResponse.data.data || []);
                 console.log('Zones loaded:', zonesResponse.data.data?.length || 0);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error fetching units and zones:', err);
             console.error('Error response:', err.response?.data);
             console.error('Error status:', err.response?.status);

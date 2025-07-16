@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { clearSession, storeUser, getUser, migrateLegacySession, type User } from '@/lib/session-manager';
 
-export type UserRole = 'admin' | 'unit_leader' | 'member';
+export type UserRole = 'admin' | 'unit_leader' | 'member' | 'zone_leader';
+export type { User };
 
 interface AuthContextType {
     user: User | null;
@@ -39,21 +40,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
         clearSession();
     };
 
-    // Check for existing session on mount
+    // Initialize user state from session storage
     useEffect(() => {
-        // Try to get user from session manager
-        const userData = getUser();
-        
-        if (userData) {
-            setUser(userData);
-        } else {
-            // Try to migrate legacy session data
-            const migratedUser = migrateLegacySession();
-            if (migratedUser) {
-                setUser(migratedUser);
+        try {
+            // Try to get user from session storage
+            const userData = getUser();
+            if (userData) {
+                console.log('AuthContext: User found in session storage:', userData);
+                setUser(userData);
+            } else {
+                // Try to migrate legacy session data
+                const migratedUser = migrateLegacySession();
+                if (migratedUser) {
+                    console.log('AuthContext: User migrated from legacy session:', migratedUser);
+                    setUser(migratedUser);
+                } else {
+                    console.log('AuthContext: No user found anywhere');
+                }
             }
+        } catch (error) {
+            console.error('AuthContext: Error initializing user state:', error);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }, []);
 
     const value: AuthContextType = {

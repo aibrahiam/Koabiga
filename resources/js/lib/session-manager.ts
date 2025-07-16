@@ -5,11 +5,20 @@ export interface User {
   id: number;
   name: string;
   email?: string;
-  role: 'admin' | 'unit_leader' | 'member';
+  role: 'admin' | 'unit_leader' | 'member' | 'zone_leader';
   avatar?: string | null;
   christian_name?: string;
   family_name?: string;
   phone?: string;
+  secondary_phone?: string;
+  status?: string;
+  gender?: string;
+  unit_id?: number;
+  zone_id?: number;
+  last_activity_at?: string;
+  last_login_at?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface SessionConfig {

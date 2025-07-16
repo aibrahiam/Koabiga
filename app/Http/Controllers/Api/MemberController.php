@@ -37,6 +37,7 @@ class MemberController extends Controller
                 $q->where('christian_name', 'like', "%{$search}%")
                   ->orWhere('family_name', 'like', "%{$search}%")
                   ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('secondary_phone', 'like', "%{$search}%")
                   ->orWhere('id_passport', 'like', "%{$search}%");
             });
         }
@@ -61,6 +62,7 @@ class MemberController extends Controller
                 'users.family_name',
                 'users.id_passport',
                 'users.phone',
+                'users.secondary_phone',
                 'users.role',
                 DB::raw('COALESCE(users.status, \'active\') as status'),
                 'users.created_at as join_date',
@@ -102,12 +104,20 @@ class MemberController extends Controller
                 'family_name' => 'required|string|max:255',
                 'id_passport' => 'nullable|string|max:50',
                 'phone' => 'required|string|unique:users,phone',
+                'secondary_phone' => 'nullable|string|unique:users,secondary_phone',
                 'role' => 'required|in:admin,unit_leader,member',
                 'status' => 'required|in:active,inactive',
                 'zone_id' => 'nullable',
                 'unit_id' => 'nullable',
                 'pin' => 'required|string|size:5|regex:/^[0-9]+$/',
             ]);
+
+            // Add custom validation for secondary phone
+            $validator->after(function ($validator) use ($request) {
+                if ($request->secondary_phone && $request->secondary_phone === $request->phone) {
+                    $validator->errors()->add('secondary_phone', 'Secondary phone number cannot be the same as primary phone number.');
+                }
+            });
 
             // Add custom validation for zone_id and unit_id
             $validator->after(function ($validator) use ($request) {
@@ -163,6 +173,7 @@ class MemberController extends Controller
                 'family_name' => $request->family_name,
                 'id_passport' => $request->id_passport,
                 'phone' => \App\Models\User::normalizePhoneNumber($request->phone),
+                'secondary_phone' => $request->secondary_phone ? \App\Models\User::normalizePhoneNumber($request->secondary_phone) : null,
                 'role' => $request->role,
                 'status' => $request->status,
                 'zone_id' => $request->zone_id === 'none' ? null : (int) $request->zone_id,
@@ -249,12 +260,20 @@ class MemberController extends Controller
                 'family_name' => 'required|string|max:255',
                 'id_passport' => 'required|string|max:50',
                 'phone' => 'required|string|unique:users,phone,' . $id,
+                'secondary_phone' => 'nullable|string|unique:users,secondary_phone,' . $id,
                 'role' => 'required|in:admin,unit_leader,member',
                 'status' => 'required|in:active,inactive',
                 'zone_id' => 'nullable',
                 'unit_id' => 'nullable',
                 'pin' => 'nullable|string|size:5|regex:/^[0-9]+$/',
             ]);
+
+            // Add custom validation for secondary phone
+            $validator->after(function ($validator) use ($request) {
+                if ($request->secondary_phone && $request->secondary_phone === $request->phone) {
+                    $validator->errors()->add('secondary_phone', 'Secondary phone number cannot be the same as primary phone number.');
+                }
+            });
 
             // Add custom validation for zone_id and unit_id
             $validator->after(function ($validator) use ($request) {

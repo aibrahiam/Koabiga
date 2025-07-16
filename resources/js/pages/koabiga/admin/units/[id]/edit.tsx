@@ -99,11 +99,18 @@ export default function EditUnit() {
                                         <SelectValue placeholder="Select zone" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {zones.map((zone) => (
-                                            <SelectItem key={zone.id} value={zone.id.toString()}>
-                                                {zone.name}
+                                        {zones
+                                            .filter(zone => zone && zone.id && zone.name)
+                                            .map((zone) => (
+                                                <SelectItem key={zone.id} value={String(zone.id)}>
+                                                    {zone.name}
+                                                </SelectItem>
+                                            ))}
+                                        {zones.filter(zone => zone && zone.id && zone.name).length === 0 && (
+                                            <SelectItem value="none" disabled>
+                                                No zones available
                                             </SelectItem>
-                                        ))}
+                                        )}
                                     </SelectContent>
                                 </Select>
                                 {errors.zoneId && <div className="text-red-600 text-sm mt-1">{errors.zoneId}</div>}

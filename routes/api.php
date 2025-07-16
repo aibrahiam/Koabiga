@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\ErrorLogController;
 use App\Http\Controllers\Api\LoginSessionController;
 use App\Http\Controllers\Api\UnitLeaderController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\Member\DashboardController as MemberDashboardController;
 
 /*
@@ -36,7 +37,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Authentication Routes (Public)
 Route::middleware(['web'])->group(function () {
-    Route::post('/admin/login', [AuthController::class, 'adminLogin']);
     Route::post('/leaders/login', [AuthController::class, 'leadersLogin']);
     Route::post('/member/login', [AuthController::class, 'memberLogin']);
     Route::post('/login', [AuthController::class, 'login']);
@@ -159,12 +159,19 @@ Route::prefix('admin')->middleware(['web', 'auth:web', 'role:admin'])->group(fun
     Route::prefix('units')->group(function () {
         Route::get('/', [UnitController::class, 'index']);
         Route::post('/', [UnitController::class, 'store']);
+        Route::get('/statistics', [UnitController::class, 'statistics']);
         Route::get('/{unit}', [UnitController::class, 'show']);
         Route::put('/{unit}', [UnitController::class, 'update']);
         Route::delete('/{unit}', [UnitController::class, 'destroy']);
         Route::get('/{unit}/members', [UnitController::class, 'getMembers']);
         Route::post('/{unit}/members', [UnitController::class, 'addMember']);
         Route::delete('/{unit}/members/{memberId}', [UnitController::class, 'removeMember']);
+    });
+
+    // Users Management
+    Route::prefix('users')->group(function () {
+        Route::get('/', [UserController::class, 'index']);
+        Route::get('/statistics', [UserController::class, 'statistics']);
     });
 
     // Zones Management

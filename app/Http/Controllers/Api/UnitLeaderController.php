@@ -519,12 +519,22 @@ class UnitLeaderController extends Controller
                 'christian_name' => 'required|string|max:255',
                 'family_name' => 'required|string|max:255',
                 'phone' => 'required|string|max:20|unique:users,phone',
+                'secondary_phone' => 'nullable|string|max:20|unique:users,secondary_phone',
                 'email' => 'nullable|email|unique:users,email',
                 'id_passport' => 'required|string|max:50|unique:users,id_passport',
                 'password' => 'required|string|min:4|max:6',
                 'password_confirmation' => 'required|same:password',
                 'unit_id' => 'nullable|exists:units,id'
             ]);
+
+            // Ensure secondary phone is not the same as primary phone
+            if ($request->secondary_phone && $request->secondary_phone === $request->phone) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Secondary phone number cannot be the same as primary phone number.',
+                    'errors' => ['secondary_phone' => ['Secondary phone number cannot be the same as primary phone number.']]
+                ], 422);
+            }
 
             $memberData = $request->all();
             $memberData['role'] = 'member';
@@ -586,10 +596,20 @@ class UnitLeaderController extends Controller
                 'christian_name' => 'required|string|max:255',
                 'family_name' => 'required|string|max:255',
                 'phone' => 'required|string|max:20|unique:users,phone,' . $id,
+                'secondary_phone' => 'nullable|string|max:20|unique:users,secondary_phone,' . $id,
                 'email' => 'nullable|email|unique:users,email,' . $id,
                 'id_passport' => 'required|string|max:50|unique:users,id_passport,' . $id,
                 'status' => 'required|in:active,inactive'
             ]);
+
+            // Ensure secondary phone is not the same as primary phone
+            if ($request->secondary_phone && $request->secondary_phone === $request->phone) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Secondary phone number cannot be the same as primary phone number.',
+                    'errors' => ['secondary_phone' => ['Secondary phone number cannot be the same as primary phone number.']]
+                ], 422);
+            }
 
             $member->update($request->all());
 

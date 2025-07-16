@@ -71,10 +71,9 @@ export default function EditMember({ member, units, zones }: EditMemberProps) {
         <AppLayout breadcrumbs={[
             { title: 'Admin', href: '/koabiga/admin' },
             { title: 'Members Management', href: '/koabiga/admin/members' },
-            { title: `${member.christian_name} ${member.family_name}`, href: `/koabiga/admin/members/${member.id}` },
-            { title: 'Edit Member', href: `/koabiga/admin/members/${member.id}/edit` }
+            { title: `Edit ${member.christian_name} ${member.family_name}`, href: `/koabiga/admin/members/${member.id}/edit` }
         ]}>
-            <Head title={`Edit Member - ${member.christian_name} ${member.family_name}`} />
+            <Head title={`Edit ${member.christian_name} ${member.family_name} - Koabiga Admin`} />
             
             <div className="flex flex-col items-center justify-center min-h-screen py-8">
                 <div className="w-full max-w-4xl space-y-6">
@@ -82,38 +81,40 @@ export default function EditMember({ member, units, zones }: EditMemberProps) {
                     {/* Header */}
                     <div className="text-center space-y-4">
                         <div>
-                            <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">Edit Member</h1>
+                            <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">
+                                Edit Member: {member.christian_name} {member.family_name}
+                            </h1>
                             <p className="text-green-600 dark:text-green-300 mt-1">
-                                Update information for {member.christian_name} {member.family_name}
+                                Update member information and role assignments
                             </p>
-                        </div>
-                    </div>
-
-                    {/* Back Button */}
-                    <div className="flex justify-center">
-                        <div className="w-full max-w-2xl">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => router.visit(`/koabiga/admin/members/${member.id}`)}
-                                className="flex items-center"
-                            >
-                                <ArrowLeft className="w-4 h-4 mr-2" />
-                                Back to Member Details
-                            </Button>
                         </div>
                     </div>
 
                     {/* Form */}
                     <div className="flex justify-center">
-                        <MemberForm
-                            zones={zones}
-                            units={units}
-                            member={member}
-                            onSubmit={handleSubmit}
-                            isSubmitting={isSubmitting}
-                            errors={errors}
-                        />
+                        <div className="w-full max-w-4xl space-y-4">
+                            {/* Back Button */}
+                            <div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => router.visit('/koabiga/admin/members')}
+                                    className="flex items-center"
+                                >
+                                    <ArrowLeft className="w-4 h-4 mr-2" />
+                                    Back
+                                </Button>
+                            </div>
+
+                            <MemberForm
+                                zones={zones}
+                                units={units}
+                                member={member}
+                                onSubmit={handleSubmit}
+                                isSubmitting={isSubmitting}
+                                errors={errors}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
