@@ -23,7 +23,7 @@ import axios from '@/lib/axios';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Member Dashboard',
-        href: '/koabiga/member/dashboard',
+        href: '/koabiga/members/dashboard',
     },
 ];
 
@@ -113,11 +113,11 @@ export default function MemberDashboard() {
     }, []);
 
     const quickActions = [
-        { title: 'My Land', icon: MapPin, href: '/koabiga/member/land', color: 'bg-green-600 dark:bg-green-500' },
-        { title: 'My Crops', icon: Sprout, href: '/koabiga/member/crops', color: 'bg-green-600 dark:bg-green-500' },
-        { title: 'My Produce', icon: Package, href: '/koabiga/member/produce', color: 'bg-green-600 dark:bg-green-500' },
-        { title: 'My Reports', icon: FileText, href: '/koabiga/member/reports', color: 'bg-green-600 dark:bg-green-500' },
-        { title: 'My Fees', icon: FileText, href: '/koabiga/member/fees', color: 'bg-green-600 dark:bg-green-500' },
+        { title: 'My Land', icon: MapPin, href: '/koabiga/members/land', color: 'bg-green-600 dark:bg-green-500' },
+        { title: 'My Crops', icon: Sprout, href: '/koabiga/members/crops', color: 'bg-green-600 dark:bg-green-500' },
+        { title: 'My Produce', icon: Package, href: '/koabiga/members/produce', color: 'bg-green-600 dark:bg-green-500' },
+        { title: 'My Reports', icon: FileText, href: '/koabiga/members/reports', color: 'bg-green-600 dark:bg-green-500' },
+        { title: 'My Fees', icon: FileText, href: '/koabiga/members/fees', color: 'bg-green-600 dark:bg-green-500' },
     ];
 
     if (loading) {
@@ -170,7 +170,7 @@ export default function MemberDashboard() {
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                    <Link href="/koabiga/member/land" className="contents">
+                    <Link href="/koabiga/members/land" className="contents">
                         <Card className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-xs sm:text-sm font-medium">Assigned Land</CardTitle>
@@ -182,7 +182,7 @@ export default function MemberDashboard() {
                             </CardContent>
                         </Card>
                     </Link>
-                    <Link href="/koabiga/member/crops" className="contents">
+                    <Link href="/koabiga/members/crops" className="contents">
                         <Card className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-xs sm:text-sm font-medium">Active Crops</CardTitle>
@@ -194,7 +194,7 @@ export default function MemberDashboard() {
                             </CardContent>
                         </Card>
                     </Link>
-                    <Link href="/koabiga/member/produce" className="contents">
+                    <Link href="/koabiga/members/produce" className="contents">
                         <Card className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-xs sm:text-sm font-medium">Monthly Produce</CardTitle>
@@ -206,7 +206,7 @@ export default function MemberDashboard() {
                             </CardContent>
                         </Card>
                     </Link>
-                    <Link href="/koabiga/member/fees" className="contents">
+                    <Link href="/koabiga/members/fees" className="contents">
                         <Card className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-xs sm:text-sm font-medium">This Month Fees</CardTitle>
@@ -305,7 +305,7 @@ export default function MemberDashboard() {
 
                 {/* Additional Info */}
                 <div className="grid grid-cols-2 xs:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-                    <Link href="/koabiga/member/reports" className="contents">
+                    <Link href="/koabiga/members/reports" className="contents">
                         <Card className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <CardHeader>
                                 <CardTitle className="text-xs sm:text-sm">Pending Reports</CardTitle>
@@ -316,7 +316,7 @@ export default function MemberDashboard() {
                             </CardContent>
                         </Card>
                     </Link>
-                    <Link href="/koabiga/member/fees" className="contents">
+                    <Link href="/koabiga/members/fees" className="contents">
                         <Card className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <CardHeader>
                                 <CardTitle className="text-xs sm:text-sm">Fees</CardTitle>
@@ -327,7 +327,7 @@ export default function MemberDashboard() {
                             </CardContent>
                         </Card>
                     </Link>
-                    <Link href="/koabiga/member/land" className="contents">
+                    <Link href="/koabiga/members/land" className="contents">
                         <Card className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <CardHeader>
                                 <CardTitle className="text-xs sm:text-sm">Unit Status</CardTitle>

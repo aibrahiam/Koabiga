@@ -18,32 +18,37 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 const memberNavItems = [
     {
         title: 'Dashboard',
-        href: '/koabiga/member/dashboard',
+        href: '/koabiga/members/dashboard',
         icon: Home,
     },
     {
         title: 'My Land',
-        href: '/koabiga/member/land',
+        href: '/koabiga/members/land',
         icon: MapPin,
     },
     {
         title: 'My Crops',
-        href: '/koabiga/member/crops',
+        href: '/koabiga/members/crops',
         icon: Sprout,
     },
     {
         title: 'My Produce',
-        href: '/koabiga/member/produce',
+        href: '/koabiga/members/produce',
         icon: Package,
     },
     {
         title: 'My Reports',
-        href: '/koabiga/member/reports',
+        href: '/koabiga/members/reports',
+        icon: FileText,
+    },
+    {
+        title: 'My Forms',
+        href: '/koabiga/members/forms',
         icon: FileText,
     },
     {
         title: 'My Fees',
-        href: '/koabiga/member/fees',
+        href: '/koabiga/members/fees',
         icon: TrendingUp,
     },
 ];

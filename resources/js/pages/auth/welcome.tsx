@@ -72,7 +72,7 @@ export default function Welcome({ status, canResetPin }: WelcomeProps) {
                 
                 // Redirect to members dashboard
                 setTimeout(() => {
-                    window.location.href = '/koabiga/member/dashboard';
+                    window.location.href = '/koabiga/members/dashboard';
                 }, 1000);
             } else {
                 setGeneralError(result.message || 'Login failed');

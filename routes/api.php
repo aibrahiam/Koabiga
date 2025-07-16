@@ -176,91 +176,9 @@ Route::prefix('member')->middleware(['web', 'auth:web', 'role:member'])->group(f
     Route::get('/land', [MemberController::class, 'getLand']);
     Route::get('/crops', [MemberController::class, 'getCrops']);
     Route::get('/produce', [MemberController::class, 'getProduce']);
-
-    // Units Management
-    Route::prefix('units')->group(function () {
-        Route::get('/', [UnitController::class, 'index']);
-        Route::post('/', [UnitController::class, 'store']);
-        Route::get('/statistics', [UnitController::class, 'statistics']);
-        Route::get('/{unit}', [UnitController::class, 'show']);
-        Route::put('/{unit}', [UnitController::class, 'update']);
-        Route::delete('/{unit}', [UnitController::class, 'destroy']);
-        Route::get('/{unit}/members', [UnitController::class, 'getMembers']);
-        Route::post('/{unit}/members', [UnitController::class, 'addMember']);
-        Route::delete('/{unit}/members/{memberId}', [UnitController::class, 'removeMember']);
-    });
-
-    // Users Management
-    Route::prefix('users')->group(function () {
-        Route::get('/', [UserController::class, 'index']);
-        Route::get('/statistics', [UserController::class, 'statistics']);
-    });
-
-    // Zones Management
-    Route::prefix('zones')->group(function () {
-        Route::get('/', [ZoneController::class, 'index']);
-        Route::post('/', [ZoneController::class, 'store']);
-        Route::get('/statistics', [ZoneController::class, 'statistics']);
-        Route::get('/available-leaders', [ZoneController::class, 'getAvailableLeaders']);
-        Route::get('/{zone}', [ZoneController::class, 'show']);
-        Route::put('/{zone}', [ZoneController::class, 'update']);
-        Route::delete('/{zone}', [ZoneController::class, 'destroy']);
-    });
-
-    // Reports Management
-    Route::prefix('reports')->group(function () {
-        Route::get('/', [ReportController::class, 'index']);
-        Route::get('/export', [ReportController::class, 'export']);
-        Route::post('/generate-preview', [ReportController::class, 'generatePreview']);
-        Route::post('/generate', [ReportController::class, 'generate']);
-        Route::get('/{id}', [ReportController::class, 'show']);
-        Route::patch('/{id}/status', [ReportController::class, 'updateStatus']);
-        Route::delete('/{id}', [ReportController::class, 'destroy']);
-    });
-
-    // Fee Rules API Routes
-    Route::prefix('fee-rules')->group(function () {
-        Route::get('/', [FeeRuleController::class, 'index']);
-        Route::post('/', [FeeRuleController::class, 'store']);
-        Route::get('/statistics', [FeeRuleController::class, 'statistics']);
-        Route::get('/{feeRule}', [FeeRuleController::class, 'show']);
-        Route::put('/{feeRule}', [FeeRuleController::class, 'update']);
-        Route::delete('/{feeRule}', [FeeRuleController::class, 'destroy']);
-        Route::post('/{feeRule}/apply', [FeeRuleController::class, 'applyFeeRule']);
-        Route::post('/{feeRule}/schedule', [FeeRuleController::class, 'scheduleFeeRule']);
-        Route::post('/{feeRule}/assign-units', [FeeRuleController::class, 'assignToUnits']);
-        Route::get('/{feeRule}/applications', [FeeRuleController::class, 'getFeeApplications']);
-        Route::get('/{feeRule}/unit-assignments', [FeeRuleController::class, 'getUnitAssignments']);
-        Route::get('/{feeRule}/statistics', [FeeRuleController::class, 'getFeeRuleStatistics']);
-    });
-
-    // Forms Management
-    Route::prefix('forms')->group(function () {
-        Route::get('/', [FormController::class, 'index']);
-        Route::post('/', [FormController::class, 'store']);
-        Route::get('/{form}', [FormController::class, 'show']);
-        Route::put('/{form}', [FormController::class, 'update']);
-        Route::delete('/{form}', [FormController::class, 'destroy']);
-        Route::get('/{form}/submissions', [FormController::class, 'getSubmissions']);
-    });
-
-    // Pages Management
-    Route::prefix('pages')->group(function () {
-        Route::get('/', [PageController::class, 'index']);
-        Route::post('/', [PageController::class, 'store']);
-        Route::get('/{id}', [PageController::class, 'show']);
-        Route::put('/{id}', [PageController::class, 'update']);
-        Route::delete('/{id}', [PageController::class, 'destroy']);
-    });
-
-    // Settings Management
-    Route::prefix('settings')->group(function () {
-        Route::get('/', [SettingsController::class, 'index']);
-        Route::put('/', [SettingsController::class, 'update']);
-        Route::get('/public', [SettingsController::class, 'public']);
-        Route::post('/reset', [SettingsController::class, 'reset']);
-        Route::get('/{key}', [SettingsController::class, 'show']);
-    });
+    Route::get('/forms', [MemberController::class, 'getForms']);
+    Route::get('/reports', [MemberController::class, 'getReports']);
+    Route::get('/fees', [MemberController::class, 'getFees']);
 });
 
 // Public system metrics (limited access)

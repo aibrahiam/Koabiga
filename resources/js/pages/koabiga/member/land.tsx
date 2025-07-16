@@ -9,8 +9,11 @@ import {
     Calendar,
     TrendingUp,
     Droplets,
-    Sun
+    Sun,
+    Loader2
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import axios from '@/lib/axios';
 
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -24,111 +27,130 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Member Dashboard',
-        href: '/koabiga/member/dashboard',
+        href: '/koabiga/members/dashboard',
     },
     {
         title: 'My Land',
-        href: '/koabiga/member/land',
+        href: '/koabiga/members/land',
     },
 ];
 
+interface LandFee {
+    id: number;
+    title: string;
+    amount: number;
+    status: string;
+    dueDate: string;
+    fee_rule?: {
+        name: string;
+        type: string;
+    };
+}
+
+interface UnitInfo {
+    id: number;
+    name: string;
+    leader?: {
+        christian_name: string;
+        family_name: string;
+        phone_number: string;
+    };
+}
+
 export default function MemberLand() {
-    // Mock data for demonstration
-    const landPlots = [
-        {
-            id: 1,
-            name: 'Field A',
-            area: 8,
-            location: 'North Section',
-            soilType: 'Loamy',
-            status: 'active',
-            currentCrop: 'Corn',
-            irrigationStatus: 'good',
-            lastMaintenance: '2024-06-20',
-            nextMaintenance: '2024-07-05',
-            productivity: 85,
-            coordinates: '40.7128° N, 74.0060° W',
-        },
-        {
-            id: 2,
-            name: 'Field B',
-            area: 5,
-            location: 'South Section',
-            soilType: 'Clay',
-            status: 'active',
-            currentCrop: 'Wheat',
-            irrigationStatus: 'needs_attention',
-            lastMaintenance: '2024-06-15',
-            nextMaintenance: '2024-06-30',
-            productivity: 72,
-            coordinates: '40.7125° N, 74.0055° W',
-        },
-        {
-            id: 3,
-            name: 'Field C',
-            area: 3,
-            location: 'East Section',
-            soilType: 'Sandy',
-            status: 'fallow',
-            currentCrop: null,
-            irrigationStatus: 'good',
-            lastMaintenance: '2024-06-10',
-            nextMaintenance: '2024-07-15',
-            productivity: 0,
-            coordinates: '40.7130° N, 74.0065° W',
-        },
-        {
-            id: 4,
-            name: 'Field D',
-            area: 4,
-            location: 'West Section',
-            soilType: 'Loamy',
-            status: 'active',
-            currentCrop: 'Soybeans',
-            irrigationStatus: 'excellent',
-            lastMaintenance: '2024-06-18',
-            nextMaintenance: '2024-07-08',
-            productivity: 92,
-            coordinates: '40.7120° N, 74.0050° W',
-        },
-    ];
+    const [landPlots, setLandPlots] = useState<any[]>([]);
+    const [landFees, setLandFees] = useState<LandFee[]>([]);
+    const [unitInfo, setUnitInfo] = useState<UnitInfo | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'active':
-                return <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>;
-            case 'fallow':
-                return <Badge variant="secondary">Fallow</Badge>;
-            case 'maintenance':
-                return <Badge variant="outline">Under Maintenance</Badge>;
-            default:
-                return <Badge variant="outline">{status}</Badge>;
-        }
-    };
+    useEffect(() => {
+        const fetchLandData = async () => {
+            try {
+                setLoading(true);
+                setError(null);
 
-    const getIrrigationBadge = (status: string) => {
-        switch (status) {
-            case 'excellent':
-                return <Badge variant="default" className="bg-blue-100 text-blue-800">Excellent</Badge>;
-            case 'good':
-                return <Badge variant="default" className="bg-green-100 text-green-800">Good</Badge>;
-            case 'needs_attention':
-                return <Badge variant="destructive">Needs Attention</Badge>;
-            default:
-                return <Badge variant="outline">{status}</Badge>;
-        }
-    };
+                // Fetch land data
+                const landResponse = await axios.get('/member/land');
+                if (landResponse.data.success) {
+                    setLandPlots(landResponse.data.data);
+                }
 
-    const totalArea = landPlots.reduce((sum, plot) => sum + plot.area, 0);
-    const activePlots = landPlots.filter(plot => plot.status === 'active').length;
-    const averageProductivity = landPlots.length > 0 
-        ? Math.round(landPlots.reduce((sum, plot) => sum + plot.productivity, 0) / landPlots.length)
-        : 0;
+                // Fetch fees data
+                const feesResponse = await axios.get('/member/fees');
+                if (feesResponse.data.success) {
+                    setLandFees(feesResponse.data.data);
+                }
+
+                // Fetch unit information (assuming the first land has unit info)
+                if (landResponse.data.success && landResponse.data.data.length > 0) {
+                    const firstLand = landResponse.data.data[0];
+                    if (firstLand.unit_id) {
+                        // You might need to create a separate API endpoint for unit info
+                        // For now, we'll use the unit info from the land data
+                        setUnitInfo({
+                            id: firstLand.unit_id,
+                            name: firstLand.unit || 'Unknown Unit',
+                            leader: {
+                                christian_name: 'John', // This should come from backend
+                                family_name: 'Doe',
+                                phone_number: '+250 788 123 456'
+                            }
+                        });
+                    }
+                }
+
+            } catch (err: any) {
+                console.error('Error fetching land data:', err);
+                setError(err.response?.data?.message || err.message || 'Failed to load land data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLandData();
+    }, []);
+
+    const totalArea = landPlots.reduce((sum, plot) => sum + (plot.area || 0), 0);
+    const totalLandFees = landFees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
+
+    if (loading) {
+        return (
+            <AppLayout breadcrumbs={breadcrumbs}>
+                <Head title="My Land - Koabiga" />
+                <div className="flex h-full flex-1 flex-col gap-6 p-6">
+                    <div className="flex items-center justify-center h-64">
+                        <div className="flex items-center space-x-2">
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                            <span>Loading land data...</span>
+                        </div>
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <AppLayout breadcrumbs={breadcrumbs}>
+                <Head title="My Land - Koabiga" />
+                <div className="flex h-full flex-1 flex-col gap-6 p-6">
+                    <div className="flex items-center justify-center h-64">
+                        <div className="text-center">
+                            <p className="text-red-600 mb-4">{error}</p>
+                            <Button onClick={() => window.location.reload()}>
+                                Retry
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="My Land - Koabiga" />
-            
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -159,41 +181,45 @@ export default function MemberLand() {
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Active Plots</CardTitle>
-                            <Sun className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <CardTitle className="text-sm font-medium">Land Fees</CardTitle>
+                            <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{activePlots}</div>
+                            <div className="text-2xl font-bold">{totalLandFees.toLocaleString()} RWF</div>
                             <p className="text-xs text-muted-foreground">
-                                Currently cultivated
+                                This month
                             </p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Average Productivity</CardTitle>
-                            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <CardTitle className="text-sm font-medium">Unit Info</CardTitle>
+                            <Sun className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{averageProductivity}%</div>
+                            <div className="text-sm font-medium">{unitInfo?.name || 'No Unit Assigned'}</div>
                             <p className="text-xs text-muted-foreground">
-                                This season
+                                Leader: {unitInfo?.leader ? `${unitInfo.leader.christian_name} ${unitInfo.leader.family_name}` : 'Not Assigned'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {unitInfo?.leader?.phone_number || 'No Phone'}
                             </p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Irrigation Status</CardTitle>
-                            <Droplets className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <CardTitle className="text-sm font-medium">Koabiga Contact</CardTitle>
+                            <Droplets className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
-                                {landPlots.filter(plot => plot.irrigationStatus === 'excellent' || plot.irrigationStatus === 'good').length}
-                            </div>
+                            <div className="text-sm font-medium">Sarah Manager</div>
                             <p className="text-xs text-muted-foreground">
-                                Good condition
+                                Contact Person
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                +250 789 987 654
                             </p>
                         </CardContent>
                     </Card>
@@ -209,9 +235,10 @@ export default function MemberLand() {
                                     <Input
                                         placeholder="Search land plots..."
                                         className="pl-8"
+                                        disabled={landPlots.length === 0}
                                     />
                                 </div>
-                                <Select>
+                                <Select disabled={landPlots.length === 0}>
                                     <SelectTrigger className="w-[180px]">
                                         <SelectValue placeholder="Filter by status" />
                                     </SelectTrigger>
@@ -222,7 +249,7 @@ export default function MemberLand() {
                                         <SelectItem value="maintenance">Maintenance</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <Select>
+                                <Select disabled={landPlots.length === 0}>
                                     <SelectTrigger className="w-[180px]">
                                         <SelectValue placeholder="Filter by soil type" />
                                     </SelectTrigger>
@@ -240,79 +267,68 @@ export default function MemberLand() {
 
                 {/* Land Plots Grid */}
                 <div className="grid gap-6 md:grid-cols-2">
-                    {landPlots.map((plot) => (
-                        <Card key={plot.id} className="hover:shadow-md transition-shadow">
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <CardTitle className="text-xl">{plot.name}</CardTitle>
-                                        <CardDescription>{plot.location}</CardDescription>
-                                    </div>
-                                    {getStatusBadge(plot.status)}
-                                </div>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                        <p className="text-muted-foreground">Area</p>
-                                        <p className="font-medium">{plot.area} hectares</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground">Soil Type</p>
-                                        <p className="font-medium">{plot.soilType}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground">Current Crop</p>
-                                        <p className="font-medium">{plot.currentCrop || 'None'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground">Irrigation</p>
-                                        {getIrrigationBadge(plot.irrigationStatus)}
-                                    </div>
-                                </div>
-
-                                {plot.status === 'active' && (
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span>Productivity</span>
-                                            <span>{plot.productivity}%</span>
+                    {landPlots.length > 0 ? (
+                        landPlots.map((plot) => (
+                            <Card key={plot.id} className="hover:shadow-md transition-shadow">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle className="text-xl">{plot.land_number || `Land ${plot.id}`}</CardTitle>
+                                            <CardDescription>{plot.zone || 'Unknown Zone'}</CardDescription>
                                         </div>
-                                        <Progress value={plot.productivity} className="h-2" />
+                                        <Badge variant="outline">Active</Badge>
                                     </div>
-                                )}
-
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                        <p className="text-muted-foreground">Last Maintenance</p>
-                                        <p className="font-medium">{plot.lastMaintenance}</p>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <p className="text-muted-foreground">Area</p>
+                                            <p className="font-medium">{plot.area || 0} hectares</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted-foreground">Unit</p>
+                                            <p className="font-medium">{plot.unit || 'Not Assigned'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted-foreground">Zone</p>
+                                            <p className="font-medium">{plot.zone || 'Unknown'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted-foreground">Land Number</p>
+                                            <p className="font-medium">{plot.land_number || 'N/A'}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-muted-foreground">Next Maintenance</p>
-                                        <p className="font-medium">{plot.nextMaintenance}</p>
+
+                                    <div className="flex items-center space-x-2 pt-2">
+                                        <Button variant="ghost" size="sm" className="flex-1">
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            View Details
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="flex-1">
+                                            <Edit className="h-4 w-4 mr-2" />
+                                            Update Status
+                                        </Button>
+                                        <Button variant="ghost" size="sm">
+                                            <Calendar className="h-4 w-4" />
+                                        </Button>
                                     </div>
-                                </div>
-
-                                <div className="text-sm">
-                                    <p className="text-muted-foreground">Coordinates</p>
-                                    <p className="font-medium font-mono text-xs">{plot.coordinates}</p>
-                                </div>
-
-                                <div className="flex items-center space-x-2 pt-2">
-                                    <Button variant="ghost" size="sm" className="flex-1">
-                                        <Eye className="h-4 w-4 mr-2" />
-                                        View Details
-                                    </Button>
-                                    <Button variant="ghost" size="sm" className="flex-1">
-                                        <Edit className="h-4 w-4 mr-2" />
-                                        Update Status
-                                    </Button>
-                                    <Button variant="ghost" size="sm">
-                                        <Calendar className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        /* Placeholder for empty state */
+                        <Card className="col-span-2 text-center py-12">
+                            <CardContent>
+                                <MapPin className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">No Land Assigned</h2>
+                                <p className="text-gray-500 dark:text-gray-400 mb-4">You currently have no land plots assigned. Please contact your unit leader or request new land.</p>
+                                <Button className="mx-auto" variant="outline">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Request Land
+                                </Button>
                             </CardContent>
                         </Card>
-                    ))}
+                    )}
                 </div>
             </div>
         </AppLayout>

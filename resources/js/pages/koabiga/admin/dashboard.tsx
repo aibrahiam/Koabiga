@@ -66,10 +66,10 @@ export default function AdminDashboard() {
     const userPages = [
         { id: 1, title: 'Unit Leader Dashboard', path: '/koabiga/unit-leader/dashboard', status: 'active', lastModified: '2024-06-25' },
         { id: 2, title: 'Unit Leader Members', path: '/koabiga/unit-leader/members', status: 'active', lastModified: '2024-06-24' },
-        { id: 3, title: 'Member Dashboard', path: '/koabiga/member/dashboard', status: 'active', lastModified: '2024-06-23' },
-        { id: 4, title: 'Member Land', path: '/koabiga/member/land', status: 'active', lastModified: '2024-06-22' },
-        { id: 5, title: 'Member Crops', path: '/koabiga/member/crops', status: 'draft', lastModified: '2024-06-21' },
-        { id: 6, title: 'Member Produce', path: '/koabiga/member/produce', status: 'inactive', lastModified: '2024-06-20' },
+        { id: 3, title: 'Member Dashboard', path: '/koabiga/members/dashboard', status: 'active', lastModified: '2024-06-23' },
+        { id: 4, title: 'Member Land', path: '/koabiga/members/land', status: 'active', lastModified: '2024-06-22' },
+        { id: 5, title: 'Member Crops', path: '/koabiga/members/crops', status: 'draft', lastModified: '2024-06-21' },
+        { id: 6, title: 'Member Produce', path: '/koabiga/members/produce', status: 'inactive', lastModified: '2024-06-20' },
     ];
 
     const members = [

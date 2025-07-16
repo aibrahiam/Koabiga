@@ -193,11 +193,11 @@ export default function Dashboard({ systemStats: initialSystemStats, dashboardMe
             badge: 'Member',
             color: 'bg-green-600 dark:bg-green-500',
             features: [
-                { title: 'My Land', icon: MapPin, href: '/koabiga/member/land', description: 'Manage assigned land' },
-                { title: 'My Crops', icon: Sprout, href: '/koabiga/member/crops', description: 'Track crop progress' },
-                { title: 'My Produce', icon: Package, href: '/koabiga/member/produce', description: 'Monitor your produce' },
-                { title: 'My Reports', icon: FileText, href: '/koabiga/member/reports', description: 'Submit reports' },
-                { title: 'My Forms', icon: ClipboardList, href: '/koabiga/member/forms', description: 'Access forms' },
+                { title: 'My Land', icon: MapPin, href: '/koabiga/members/land', description: 'Manage assigned land' },
+                { title: 'My Crops', icon: Sprout, href: '/koabiga/members/crops', description: 'Track crop progress' },
+                { title: 'My Produce', icon: Package, href: '/koabiga/members/produce', description: 'Monitor your produce' },
+                { title: 'My Reports', icon: FileText, href: '/koabiga/members/reports', description: 'Submit reports' },
+                { title: 'My Forms', icon: ClipboardList, href: '/koabiga/members/forms', description: 'Access forms' },
             ],
             monitoringActions: []
         }

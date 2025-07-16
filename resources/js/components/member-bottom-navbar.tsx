@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button';
 import { type PageProps } from '@/types';
 
 const navItems = [
-  { title: 'Dashboard', href: '/koabiga/member/dashboard', icon: LayoutGrid },
-  { title: 'Land', href: '/koabiga/member/land', icon: MapPin },
-  { title: 'Crops', href: '/koabiga/member/crops', icon: Sprout },
-  { title: 'Produce', href: '/koabiga/member/produce', icon: Package },
-  { title: 'Reports', href: '/koabiga/member/reports', icon: FileText },
+  { title: 'Dashboard', href: '/koabiga/members/dashboard', icon: LayoutGrid },
+  { title: 'Crops', href: '/koabiga/members/crops', icon: Sprout },
+  { title: 'Reports', href: '/koabiga/members/reports', icon: FileText },
+  { title: 'Produce', href: '/koabiga/members/produce', icon: Package },
 ];
 
 export default function MemberBottomNavbar() {
@@ -38,6 +37,7 @@ export default function MemberBottomNavbar() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center bg-white/80 dark:bg-gray-900/80 border-t border-gray-200 dark:border-gray-800 h-16 md:hidden shadow-2xl rounded-t-2xl px-3 py-2 transition-all backdrop-blur-md backdrop-saturate-150 border-x border-b-0 border-gray-300/40 dark:border-gray-700/60">
       {navItems.map((item) => {
         const isActive = url.startsWith(item.href);
+        const isReports = item.title === 'Reports';
         return (
           <Link
             key={item.href}
@@ -47,11 +47,11 @@ export default function MemberBottomNavbar() {
           >
             <span className="relative flex items-center justify-center">
               <item.icon
-                className={`mb-0.5 h-6 w-6 transition-all duration-200 ${isActive ? 'text-green-600 dark:text-green-400 drop-shadow-lg scale-125' : 'text-gray-400 dark:text-gray-500'}`}
+                className={`mb-0.5 h-6 w-6 transition-all duration-200 ${isActive ? 'text-green-600 dark:text-green-400 drop-shadow-lg scale-125' : 'text-gray-400 dark:text-gray-500'} ${isActive && isReports ? 'animate-pulse shadow-lg shadow-green-500/50' : ''}`}
                 aria-hidden="true"
               />
               {isActive && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full shadow-md animate-bounce" />
+                <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full shadow-md animate-bounce ${isReports ? 'shadow-lg shadow-green-500/50' : ''}`} />
               )}
             </span>
             {item.title}
@@ -85,19 +85,19 @@ export default function MemberBottomNavbar() {
               <p className="text-xs text-gray-500 capitalize">{user?.role || 'member'}</p>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/koabiga/member/land" className="flex items-center">
+              <Link href="/koabiga/members/land" className="flex items-center">
                 <MapPin className="mr-2 h-4 w-4" />
                 My Land
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/koabiga/member/crops" className="flex items-center">
+              <Link href="/koabiga/members/crops" className="flex items-center">
                 <Sprout className="mr-2 h-4 w-4" />
                 My Crops
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/koabiga/member/reports" className="flex items-center">
+              <Link href="/koabiga/members/reports" className="flex items-center">
                 <FileText className="mr-2 h-4 w-4" />
                 My Reports
               </Link>

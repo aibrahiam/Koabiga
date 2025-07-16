@@ -232,7 +232,7 @@ export default function MemberReports() {
     };
 
     return (
-        <MemberSidebarLayout breadcrumbs={[{ title: 'Reports', href: '/koabiga/member/reports' }]}> 
+        <MemberSidebarLayout breadcrumbs={[{ title: 'Reports', href: '/koabiga/members/reports' }]}> 
             <Head title="My Reports - Koabiga" />
             <div className="flex h-full flex-1 flex-col gap-4 p-2 sm:p-4 md:p-6">
                 {/* Header */}

@@ -292,4 +292,149 @@ class MemberController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get member's forms data
+     */
+    public function getForms(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            
+            if (!$user || $user->role !== 'member') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied. Member privileges required.'
+                ], 403);
+            }
+
+            // Mock data for forms - in a real implementation, this would query the forms table
+            $forms = [
+                [
+                    'id' => 1,
+                    'title' => 'Monthly Crop Report',
+                    'description' => 'Report on crop status and progress',
+                    'status' => 'pending',
+                    'dueDate' => '2024-01-15',
+                    'type' => 'monthly',
+                ],
+                [
+                    'id' => 2,
+                    'title' => 'Harvest Report',
+                    'description' => 'Report on harvest quantities and quality',
+                    'status' => 'completed',
+                    'dueDate' => '2024-01-10',
+                    'type' => 'harvest',
+                ],
+                [
+                    'id' => 3,
+                    'title' => 'Land Management Report',
+                    'description' => 'Report on land maintenance and improvements',
+                    'status' => 'overdue',
+                    'dueDate' => '2024-01-05',
+                    'type' => 'land',
+                ],
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $forms
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch forms data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get member's reports data
+     */
+    public function getReports(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            
+            if (!$user || $user->role !== 'member') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied. Member privileges required.'
+                ], 403);
+            }
+
+            // Get reports for this member with safe fallback
+            $reports = Report::where('user_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($report) {
+                    return [
+                        'id' => $report->id,
+                        'title' => $report->title ?? 'Report',
+                        'description' => $report->description ?? 'No description',
+                        'status' => $report->status ?? 'pending',
+                        'created_at' => $report->created_at->format('Y-m-d H:i:s'),
+                        'updated_at' => $report->updated_at->format('Y-m-d H:i:s'),
+                    ];
+                }) ?? [];
+
+            return response()->json([
+                'success' => true,
+                'data' => $reports
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch reports data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get member's fees data
+     */
+    public function getFees(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            
+            if (!$user || $user->role !== 'member') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied. Member privileges required.'
+                ], 403);
+            }
+
+            // Get fees for this member with safe fallback
+            $fees = MemberFee::where('user_id', $user->id)
+                ->with('feeRule')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($fee) {
+                    return [
+                        'id' => $fee->id,
+                        'title' => $fee->feeRule ? $fee->feeRule->name : 'Fee',
+                        'description' => $fee->feeRule ? $fee->feeRule->description : 'No description',
+                        'amount' => $fee->amount ?? 0,
+                        'status' => $fee->status ?? 'pending',
+                        'dueDate' => $fee->created_at->addDays(30)->format('Y-m-d'), // Mock due date
+                        'created_at' => $fee->created_at->format('Y-m-d H:i:s'),
+                        'fee_rule' => $fee->feeRule ? [
+                            'name' => $fee->feeRule->name ?? 'Unknown',
+                            'type' => $fee->feeRule->type ?? 'general',
+                        ] : null,
+                    ];
+                }) ?? [];
+
+            return response()->json([
+                'success' => true,
+                'data' => $fees
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch fees data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 } 
