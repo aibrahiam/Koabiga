@@ -32,9 +32,9 @@ return [
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120),
+    'lifetime' => (int) env('SESSION_LIFETIME', 15), // Reduced to 15 minutes for enhanced security
 
-    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
+    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', true), // Changed to true for security
 
     /*
     |--------------------------------------------------------------------------
@@ -169,7 +169,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', false), // Set to false for development
 
     /*
     |--------------------------------------------------------------------------
@@ -199,7 +199,7 @@ return [
     |
     */
 
-    'same_site' => env('SESSION_SAME_SITE', 'lax'),
+    'same_site' => env('SESSION_SAME_SITE', 'strict'), // Changed to strict for enhanced CSRF protection
 
     /*
     |--------------------------------------------------------------------------

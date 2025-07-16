@@ -1,14 +1,16 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { LoaderCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import { FormEventHandler, useState } from 'react';
+import { FormEventHandler, useState, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
+import { clearSessionOnLoginPage } from '@/lib/session-manager';
 
 type AdminLoginForm = {
     email: string;
-    passport: string;
+    password: string;
     remember: boolean;
 };
 
@@ -20,17 +22,112 @@ interface AdminLoginProps {
 export default function AdminLogin({ status, canResetPassword }: AdminLoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm<Required<AdminLoginForm>>({
         email: '',
-        passport: '',
+        password: '',
         remember: false,
     });
     const [showPassport, setShowPassport] = useState(false);
+    const [generalError, setGeneralError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const { login } = useAuth();
 
-    const submit: FormEventHandler = (e) => {
+    // Auto-clear session on visiting login page
+    useEffect(() => {
+        clearSessionOnLoginPage();
+    }, []);
+
+    // Add debugging on component mount
+    useEffect(() => {
+        console.log('AdminLogin component mounted');
+        console.log('Current URL:', window.location.href);
+        
+        // Check if user is already authenticated
+        const checkAuthStatus = async () => {
+            try {
+                const response = await fetch('/api/test-auth', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                console.log('Auth status check:', data);
+                
+                if (data.authenticated && data.user?.role === 'admin') {
+                    console.log('User is already authenticated as admin, redirecting to dashboard');
+                    window.location.href = '/koabiga/admin/dashboard';
+                }
+            } catch (error) {
+                console.log('Error checking auth status:', error);
+            }
+        };
+        
+        checkAuthStatus();
+    }, []);
+
+    const submit: FormEventHandler = async (e) => {
         e.preventDefault();
-        post(route('login'), {
-            data: { ...data, role: 'admin' },
-            onFinish: () => reset('passport'),
-        });
+        setGeneralError(null);
+        setIsLoading(true);
+        
+        console.log('Admin login form submitted');
+        
+        try {
+            // Use Laravel session authentication
+            const response = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    email: data.email,
+                    password: data.password,
+                    remember: data.remember,
+                }),
+                credentials: 'include', // Include cookies for session
+            });
+
+            console.log('Login response status:', response.status);
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Login response:', result);
+                
+                if (result.success) {
+                    // Create unified user data
+                    const authUser = {
+                        id: result.user.id,
+                        name: `${result.user.christian_name} ${result.user.family_name}`,
+                        email: result.user.email,
+                        role: result.user.role,
+                        avatar: result.user.avatar || null,
+                        christian_name: result.user.christian_name,
+                        family_name: result.user.family_name,
+                        phone: result.user.phone,
+                    };
+                    
+                    // Use unified login function
+                    login(authUser);
+                    
+                    console.log('Login successful, user data stored:', authUser);
+                    console.log('Redirecting to dashboard');
+                    // Use direct window location for reliable redirect
+                    window.location.href = '/koabiga/admin/dashboard';
+                } else {
+                    setGeneralError(result.message || 'Login failed');
+                }
+            } else {
+                const errorData = await response.json();
+                console.log('Login error response:', errorData);
+                setGeneralError(errorData.message || 'Login failed');
+            }
+        } catch (err) {
+            console.error('Login error:', err);
+            setGeneralError('Network error. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -41,7 +138,7 @@ export default function AdminLogin({ status, canResetPassword }: AdminLoginProps
                     <div className="text-center mb-6">
                         <div className="flex justify-center mb-4">
                             <img 
-                                src="/logo.jpg" 
+                                src="/logo.png" 
                                 alt="Koabiga Logo" 
                                 className="h-16 w-16 rounded-lg object-cover shadow-lg"
                             />
@@ -65,19 +162,19 @@ export default function AdminLogin({ status, canResetPassword }: AdminLoginProps
                         </div>
                         <div>
                             <div className="flex items-center mb-1">
-                                <label htmlFor="passport" className="block text-sm font-medium text-gray-700 dark:text-gray-200">Password</label>
+                                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-200">Password</label>
                                 <Link href={route('password.request')} className="ml-auto text-sm text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300">Forgot Password?</Link>
                             </div>
                             <div className="relative">
                                 <input
-                                    id="passport"
-                                    name="passport"
+                                    id="password"
+                                    name="password"
                                     type={showPassport ? 'text' : 'password'}
                                     required
                                     className="w-full rounded-lg border border-emerald-700 px-3 py-2 text-base shadow-sm focus:border-emerald-800 focus:ring-2 focus:ring-emerald-200 dark:border-emerald-700 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-emerald-400 dark:focus:ring-emerald-800"
                                     placeholder="Enter your password"
-                                    value={data.passport}
-                                    onChange={(e) => setData('passport', e.target.value)}
+                                    value={data.password}
+                                    onChange={(e) => setData('password', e.target.value)}
                                 />
                                 <button
                                     type="button"
@@ -88,7 +185,7 @@ export default function AdminLogin({ status, canResetPassword }: AdminLoginProps
                                     {showPassport ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
-                            <InputError message={errors.passport} />
+                            <InputError message={errors.password} />
                         </div>
                         <div className="flex items-center space-x-3">
                             <Checkbox
@@ -101,12 +198,17 @@ export default function AdminLogin({ status, canResetPassword }: AdminLoginProps
                             />
                             <Label htmlFor="remember" className="text-gray-700 dark:text-gray-200">Remember me</Label>
                         </div>
+                        {generalError && (
+                            <div className="p-3 rounded-lg bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800">
+                                <p className="text-sm text-red-600 dark:text-red-400">{generalError}</p>
+                            </div>
+                        )}
                         <button
                             type="submit"
                             className="mt-2 w-full rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors duration-200"
-                            disabled={processing}
+                            disabled={isLoading}
                         >
-                            {processing && <LoaderCircle className="h-4 w-4 animate-spin mr-2 inline" />}
+                            {isLoading && <LoaderCircle className="h-4 w-4 animate-spin mr-2 inline" />}
                             Login as Admin
                         </button>
                     </form>

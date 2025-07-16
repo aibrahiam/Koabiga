@@ -1,8 +1,8 @@
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
-import { type User } from '@/types';
-import { Link, router } from '@inertiajs/react';
+import { useAuth } from '@/contexts/AuthContext';
+import { type User } from '@/contexts/AuthContext';
 import { LogOut, Settings } from 'lucide-react';
 
 interface UserMenuContentProps {
@@ -11,10 +11,50 @@ interface UserMenuContentProps {
 
 export function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
+    const { logout } = useAuth();
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         cleanup();
-        router.flushAll();
+        
+        try {
+            // Call logout endpoint
+            const response = await fetch('/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const result = await response.json();
+            
+            // If backend signals to clear frontend session, do it
+            if (result.clearFrontendSession) {
+                logout();
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Even if backend call fails, clear frontend session
+            logout();
+        }
+        
+        // Redirect to home page after logout
+        window.location.href = '/';
+    };
+
+    // Get settings link based on user role
+    const getSettingsLink = () => {
+        switch (user.role) {
+            case 'admin':
+                return '/koabiga/admin/settings';
+            case 'unit_leader':
+                return '/koabiga/unit-leader/settings';
+            case 'member':
+                return '/koabiga/member/settings';
+            default:
+                return '/settings';
+        }
     };
 
     return (
@@ -27,18 +67,18 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                    <Link className="block w-full" href={route('profile.edit')} as="button" prefetch onClick={cleanup}>
+                    <a href={getSettingsLink()} className="block w-full text-left" onClick={cleanup}>
                         <Settings className="mr-2" />
                         Settings
-                    </Link>
+                    </a>
                 </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-                <Link className="block w-full" method="post" href={route('logout')} as="button" onClick={handleLogout}>
+                <button className="block w-full text-left" onClick={handleLogout}>
                     <LogOut className="mr-2" />
                     Log out
-                </Link>
+                </button>
             </DropdownMenuItem>
         </>
     );

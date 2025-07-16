@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { clearSession, storeUser, getUser, migrateLegacySession } from '@/lib/session-manager';
 
 export type UserRole = 'admin' | 'unit_leader' | 'member';
 
@@ -9,14 +10,18 @@ export interface User {
     role: UserRole;
     unit?: string;
     avatar?: string;
+    christian_name?: string;
+    family_name?: string;
+    phone?: string;
 }
 
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
-    login: (email: string, password: string, role: UserRole) => Promise<boolean>;
+    login: (userData: User) => void;
     logout: () => void;
     loading: boolean;
+    setTestUser: (userData: User) => void; // For testing purposes
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,68 +34,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Mock login function - in real app this would call your API
-    const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
-        setLoading(true);
-        
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock user data based on role
-        const mockUsers = {
-            admin: {
-                id: 1,
-                name: 'Admin User',
-                email: email,
-                role: 'admin' as UserRole,
-                avatar: null,
-            },
-            unit_leader: {
-                id: 2,
-                name: 'Unit Leader',
-                email: email,
-                role: 'unit_leader' as UserRole,
-                unit: 'Unit A',
-                avatar: null,
-            },
-            member: {
-                id: 3,
-                name: 'Member User',
-                email: email,
-                role: 'member' as UserRole,
-                unit: 'Unit A',
-                avatar: null,
-            },
-        };
-
-        const mockUser = mockUsers[role];
-        
-        if (mockUser) {
-            setUser(mockUser);
-            localStorage.setItem('koabiga_user', JSON.stringify(mockUser));
-            setLoading(false);
-            return true;
-        }
-        
-        setLoading(false);
-        return false;
+    // Test function to manually set user data
+    const setTestUser = (userData: User) => {
+        console.log('Setting test user:', userData);
+        handleLoginSuccess(userData);
     };
 
+    // Unified login success handler
+    const handleLoginSuccess = (userData: User) => {
+        // Store user data using session manager
+        storeUser(userData);
+        setUser(userData);
+        
+        console.log('Login successful, user data stored:', userData);
+    };
+
+    // Unified login function
+    const login = (userData: User) => {
+        handleLoginSuccess(userData);
+    };
+
+    // Complete logout function
     const logout = () => {
         setUser(null);
-        localStorage.removeItem('koabiga_user');
+        clearSession();
     };
 
     // Check for existing session on mount
     useEffect(() => {
-        const savedUser = localStorage.getItem('koabiga_user');
-        if (savedUser) {
-            try {
-                const userData = JSON.parse(savedUser);
+        console.log('AuthContext: Checking for existing session...');
+        
+        // Try to get user from session manager
+        const userData = getUser();
+        
+        if (userData) {
+            console.log('AuthContext: Found user in session:', userData);
                 setUser(userData);
-            } catch (error) {
-                console.error('Error parsing saved user data:', error);
-                localStorage.removeItem('koabiga_user');
+        } else {
+            // Try to migrate legacy session data
+            const migratedUser = migrateLegacySession();
+            if (migratedUser) {
+                console.log('AuthContext: Migrated legacy session:', migratedUser);
+                setUser(migratedUser);
+            } else {
+                console.log('AuthContext: No user data found in localStorage');
             }
         }
         setLoading(false);
@@ -102,6 +89,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         login,
         logout,
         loading,
+        setTestUser,
     };
 
     return (
@@ -133,3 +121,6 @@ export function useRoleGuard(allowedRoles: UserRole[]) {
     
     return { hasAccess: true, redirectTo: null };
 } 
+
+// Re-export session manager functions for convenience
+export { getRoleBasedRedirect, getUser as getAuthUser } from '@/lib/session-manager'; 
