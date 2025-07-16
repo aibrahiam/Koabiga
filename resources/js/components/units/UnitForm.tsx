@@ -50,6 +50,8 @@ interface UnitFormProps {
     leaders: Leader[];
     onSubmit: (data: any) => void;
     onCancel: () => void;
+    isSubmitting?: boolean;
+    errors?: Record<string, string>;
 }
 
 const unitSchema = z.object({
@@ -62,8 +64,9 @@ const unitSchema = z.object({
 
 type UnitFormData = z.infer<typeof unitSchema>;
 
-export default function UnitForm({ unit, zones, leaders, onSubmit, onCancel }: UnitFormProps) {
-    const [isSubmitting, setIsSubmitting] = useState(false);
+export default function UnitForm({ unit, zones, leaders, onSubmit, onCancel, isSubmitting: externalIsSubmitting, errors: externalErrors }: UnitFormProps) {
+    const [internalIsSubmitting, setInternalIsSubmitting] = useState(false);
+    const isSubmitting = externalIsSubmitting !== undefined ? externalIsSubmitting : internalIsSubmitting;
 
     const {
         register,
@@ -83,7 +86,9 @@ export default function UnitForm({ unit, zones, leaders, onSubmit, onCancel }: U
     });
 
     const handleFormSubmit = async (data: UnitFormData) => {
-        setIsSubmitting(true);
+        if (externalIsSubmitting === undefined) {
+            setInternalIsSubmitting(true);
+        }
         try {
             const submitData = {
                 ...data,
@@ -94,7 +99,9 @@ export default function UnitForm({ unit, zones, leaders, onSubmit, onCancel }: U
         } catch (error) {
             console.error('Error submitting form:', error);
         } finally {
-            setIsSubmitting(false);
+            if (externalIsSubmitting === undefined) {
+                setInternalIsSubmitting(false);
+            }
         }
     };
 
@@ -119,12 +126,12 @@ export default function UnitForm({ unit, zones, leaders, onSubmit, onCancel }: U
                                     id="name"
                                     placeholder="Enter unit name"
                                     {...register('name')}
-                                    className={errors.name ? 'border-red-500' : ''}
+                                    className={(errors.name || externalErrors?.name) ? 'border-red-500' : ''}
                                 />
-                                {errors.name && (
+                                {(errors.name || externalErrors?.name) && (
                                     <p className="text-sm text-red-600 flex items-center">
                                         <AlertCircle className="w-3 h-3 mr-1" />
-                                        {errors.name.message}
+                                        {errors.name?.message || externalErrors?.name}
                                     </p>
                                 )}
                             </div>
@@ -135,12 +142,12 @@ export default function UnitForm({ unit, zones, leaders, onSubmit, onCancel }: U
                                     id="code"
                                     placeholder="Enter unit code"
                                     {...register('code')}
-                                    className={errors.code ? 'border-red-500' : ''}
+                                    className={(errors.code || externalErrors?.code) ? 'border-red-500' : ''}
                                 />
-                                {errors.code && (
+                                {(errors.code || externalErrors?.code) && (
                                     <p className="text-sm text-red-600 flex items-center">
                                         <AlertCircle className="w-3 h-3 mr-1" />
-                                        {errors.code.message}
+                                        {errors.code?.message || externalErrors?.code}
                                     </p>
                                 )}
                             </div>
@@ -152,7 +159,7 @@ export default function UnitForm({ unit, zones, leaders, onSubmit, onCancel }: U
                                 value={watch('zone_id')}
                                 onValueChange={(value) => setValue('zone_id', value)}
                             >
-                                <SelectTrigger className={errors.zone_id ? 'border-red-500' : ''}>
+                                <SelectTrigger className={(errors.zone_id || externalErrors?.zone_id) ? 'border-red-500' : ''}>
                                     <SelectValue placeholder="Select zone" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -166,10 +173,10 @@ export default function UnitForm({ unit, zones, leaders, onSubmit, onCancel }: U
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.zone_id && (
+                            {(errors.zone_id || externalErrors?.zone_id) && (
                                 <p className="text-sm text-red-600 flex items-center">
                                     <AlertCircle className="w-3 h-3 mr-1" />
-                                    {errors.zone_id.message}
+                                    {errors.zone_id?.message || externalErrors?.zone_id}
                                 </p>
                             )}
                         </div>

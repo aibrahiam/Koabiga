@@ -83,6 +83,9 @@ interface UnitsManagementProps {
 }
 
 export default function UnitsManagement({ units, zones, leaders }: UnitsManagementProps) {
+    // Debug: Log the received data
+    console.log('UnitsManagement received:', { units, zones, leaders });
+    
     const [search, setSearch] = useState('');
     const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -115,8 +118,8 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
                 aValue = a.zone.name;
                 bValue = b.zone.name;
             } else if (sortField === 'leader') {
-                aValue = unit.leader ? `${unit.leader.christian_name} ${unit.leader.family_name}` : '';
-                bValue = unit.leader ? `${unit.leader.christian_name} ${unit.leader.family_name}` : '';
+                aValue = a.leader ? `${a.leader.christian_name} ${a.leader.family_name}` : '';
+                bValue = b.leader ? `${b.leader.christian_name} ${b.leader.family_name}` : '';
             }
 
             if (typeof aValue === 'string') {
@@ -146,6 +149,9 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
                 onSuccess: () => {
                     setIsCreateModalOpen(false);
                 },
+                onError: (errors) => {
+                    console.error('Error creating unit:', errors);
+                }
             });
         } catch (error) {
             console.error('Error creating unit:', error);
@@ -160,6 +166,9 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
                 onSuccess: () => {
                     setEditingUnit(null);
                 },
+                onError: (errors) => {
+                    console.error('Error updating unit:', errors);
+                }
             });
         } catch (error) {
             console.error('Error updating unit:', error);
@@ -174,6 +183,9 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
                 onSuccess: () => {
                     setDeletingUnit(null);
                 },
+                onError: (errors) => {
+                    console.error('Error deleting unit:', errors);
+                }
             });
         } catch (error) {
             console.error('Error deleting unit:', error);
@@ -423,30 +435,35 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
                                                     </div>
                                                 </td>
                                                 <td className="p-4 text-right">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="sm">
-                                                                <MoreHorizontal className="w-4 h-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => router.visit(`/koabiga/admin/units/${unit.id}`)}>
-                                                                <Eye className="w-4 h-4 mr-2" />
-                                                                View
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => setEditingUnit(unit)}>
-                                                                <Edit className="w-4 h-4 mr-2" />
-                                                                Edit
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem 
-                                                                onClick={() => setDeletingUnit(unit)}
-                                                                className="text-red-600"
-                                                            >
-                                                                <Trash2 className="w-4 h-4 mr-2" />
-                                                                Delete
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => router.visit(`/koabiga/admin/units/${unit.id}/view`)}
+                                                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                                            title="View Unit"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setEditingUnit(unit)}
+                                                            className="h-8 w-8 p-0 text-green-600 hover:text-green-800 hover:bg-green-50"
+                                                            title="Edit Unit"
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setDeletingUnit(unit)}
+                                                            className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50"
+                                                            title="Delete Unit"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -479,7 +496,7 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => router.visit(`/koabiga/admin/units/${unit.id}`)}>
+                                                <DropdownMenuItem onClick={() => router.visit(`/koabiga/admin/units/${unit.id}/view`)}>
                                                     <Eye className="w-4 h-4 mr-2" />
                                                     View
                                                 </DropdownMenuItem>

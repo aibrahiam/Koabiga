@@ -1,386 +1,261 @@
-import { Head, Link } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Head, router } from '@inertiajs/react';
+import { ArrowLeft, Edit, Users, MapPin, Phone, Calendar, Building2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-    Building2, 
-    Users, 
-    MapPin, 
-    TrendingUp, 
-    Calendar,
-    Phone,
-    Edit,
-    ArrowLeft,
-    CheckCircle,
-    Award,
-    Target
-} from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 
-export default function ViewUnit() {
-    // Mock data - replace with API call in production
-    const unit = {
-        id: 1,
-        name: 'Unit A',
-        code: 'UA001',
-        leader: 'Sarah Smith',
-        leaderPhone: '0723456789',
-        leaderId: 'ID001',
-        leaderFamilyName: 'Smith',
-        leaderChristianName: 'Sarah',
-        totalMembers: 12,
-        totalLand: 180,
-        status: 'active',
-        location: 'North Region',
-        establishedDate: '2024-01-15',
-        performance: 85,
-        avatar: null,
-        description: 'A highly productive agricultural unit specializing in maize and bean cultivation. The unit has consistently exceeded production targets and maintains high quality standards.',
-        zone: 'North Zone',
-        crops: ['Maize', 'Beans', 'Potatoes', 'Tomatoes'],
-        equipment: ['Tractor', 'Irrigation System', 'Storage Facility', 'Harvester'],
-        achievements: [
-            'Best performing unit 2023',
-            'Exceeded production targets by 15%',
-            'Zero safety incidents for 2 years',
-            'Highest quality produce award'
-        ],
-        recentActivities: [
-            { date: '2024-03-15', activity: 'Harvested maize crop', status: 'completed' },
-            { date: '2024-03-10', activity: 'Planted new bean variety', status: 'completed' },
-            { date: '2024-03-05', activity: 'Equipment maintenance', status: 'completed' },
-            { date: '2024-03-01', activity: 'Member training session', status: 'completed' }
-        ],
-        financials: {
-            totalRevenue: 2500000,
-            totalExpenses: 1800000,
-            netProfit: 700000,
-            profitMargin: 28
-        }
+interface Unit {
+    id: number;
+    name: string;
+    code: string;
+    zone_id: number;
+    leader_id?: number;
+    status: 'active' | 'inactive';
+    created_at: string;
+    updated_at: string;
+    zone: {
+        id: number;
+        name: string;
+        code: string;
     };
+    leader?: {
+        id: number;
+        christian_name: string;
+        family_name: string;
+        phone: string;
+        secondary_phone?: string;
+    };
+    members?: Array<{
+        id: number;
+        christian_name: string;
+        family_name: string;
+        phone: string;
+        status: string;
+    }>;
+}
 
+interface ViewUnitProps {
+    unit: Unit;
+}
+
+export default function ViewUnit({ unit }: ViewUnitProps) {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'active':
                 return <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>;
             case 'inactive':
                 return <Badge variant="secondary">Inactive</Badge>;
-            case 'suspended':
-                return <Badge variant="destructive">Suspended</Badge>;
             default:
                 return <Badge variant="outline">{status}</Badge>;
         }
     };
 
-    const getPerformanceBadge = (performance: number) => {
-        if (performance >= 90) {
-            return <Badge variant="default" className="bg-green-100 text-green-800">Excellent</Badge>;
-        } else if (performance >= 80) {
-            return <Badge variant="default" className="bg-blue-100 text-blue-800">Good</Badge>;
-        } else if (performance >= 70) {
-            return <Badge variant="default" className="bg-yellow-100 text-yellow-800">Average</Badge>;
-        } else {
-            return <Badge variant="destructive">Poor</Badge>;
-        }
-    };
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-KE', {
-            style: 'currency',
-            currency: 'KES'
-        }).format(amount);
-    };
-
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Admin Dashboard', href: '/koabiga/admin/dashboard' },
-            { title: 'Units', href: '/koabiga/admin/units' },
-            { title: unit.name, href: `/koabiga/admin/units/${unit.id}` },
+            { title: 'Admin', href: '/koabiga/admin' },
+            { title: 'Units Management', href: '/koabiga/admin/units' },
+            { title: unit.name, href: `/koabiga/admin/units/${unit.id}` }
         ]}>
             <Head title={`${unit.name} - Unit Details`} />
             
-            <div className="flex h-full flex-1 flex-col gap-6 p-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link href="/koabiga/admin/units">
-                            <Button variant="outline" size="sm">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back to Units
-                            </Button>
-                        </Link>
+            <div className="flex flex-col items-center justify-center min-h-screen py-8">
+                <div className="w-full max-w-4xl space-y-6">
+
+                    {/* Header */}
+                    <div className="text-center space-y-4">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{unit.name}</h1>
-                            <p className="text-gray-600 dark:text-gray-400">Unit Code: {unit.code} • {unit.zone}</p>
+                            <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">
+                                {unit.name}
+                            </h1>
+                            <p className="text-green-600 dark:text-green-300 mt-1">
+                                Unit Code: {unit.code} • {unit.zone.name}
+                            </p>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        <Link href={`/koabiga/admin/units/${unit.id}/edit`}>
-                            <Button className="flex items-center gap-2">
-                                <Edit className="h-4 w-4" />
-                                Edit Unit
-                            </Button>
-                        </Link>
-                        <Link href={`/koabiga/admin/units/${unit.id}/members`}>
-                            <Button variant="outline" className="flex items-center gap-2">
-                                <Users className="h-4 w-4" />
-                                View Members
-                            </Button>
-                        </Link>
+
+                    {/* Content */}
+                    <div className="flex justify-center">
+                        <div className="w-full max-w-4xl space-y-4">
+                            {/* Back Button */}
+                            <div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => router.visit('/koabiga/admin/units')}
+                                    className="flex items-center"
+                                >
+                                    <ArrowLeft className="w-4 h-4 mr-2" />
+                                    Back to Units
+                                </Button>
+                            </div>
+
+                            {/* Unit Information */}
+                            <Card className="border-green-200 dark:border-green-800">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
+                                        <Building2 className="h-5 w-5" />
+                                        Unit Information
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="flex items-center space-x-3">
+                                        <Avatar className="h-12 w-12">
+                                            <AvatarFallback className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                {unit.name.split(' ').map(n => n[0]).join('')}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <div className="font-medium text-green-800 dark:text-green-200">{unit.name}</div>
+                                            <Badge variant="outline" className="font-mono">{unit.code}</Badge>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid gap-3">
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium text-green-700 dark:text-green-300">Zone:</span>
+                                            <div className="flex items-center gap-2">
+                                                <MapPin className="w-4 h-4 text-green-600" />
+                                                <span className="text-sm text-green-800 dark:text-green-200">{unit.zone.name}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium text-green-700 dark:text-green-300">Status:</span>
+                                            {getStatusBadge(unit.status)}
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium text-green-700 dark:text-green-300">Created:</span>
+                                            <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                                                <Calendar className="w-3 h-3" />
+                                                {new Date(unit.created_at).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium text-green-700 dark:text-green-300">Last Updated:</span>
+                                            <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                                                <Calendar className="w-3 h-3" />
+                                                {new Date(unit.updated_at).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Unit Leader */}
+                            <Card className="border-green-200 dark:border-green-800">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
+                                        <Users className="h-5 w-5" />
+                                        Unit Leader
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {unit.leader ? (
+                                        <>
+                                            <div className="flex items-center space-x-3">
+                                                <Avatar className="h-10 w-10">
+                                                    <AvatarFallback className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                        {unit.leader.christian_name[0]}{unit.leader.family_name[0]}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <div className="font-medium text-green-800 dark:text-green-200">
+                                                        {unit.leader.christian_name} {unit.leader.family_name}
+                                                    </div>
+                                                    <div className="text-sm text-green-600 dark:text-green-400">Unit Leader</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="grid gap-3">
+                                                <div className="flex justify-between">
+                                                    <span className="text-sm font-medium text-green-700 dark:text-green-300">Primary Phone:</span>
+                                                    <div className="flex items-center gap-1 text-sm text-green-800 dark:text-green-200">
+                                                        <Phone className="w-3 h-3" />
+                                                        {unit.leader.phone}
+                                                    </div>
+                                                </div>
+                                                {unit.leader.secondary_phone && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-sm font-medium text-green-700 dark:text-green-300">Secondary Phone:</span>
+                                                        <div className="flex items-center gap-1 text-sm text-green-800 dark:text-green-200">
+                                                            <Phone className="w-3 h-3" />
+                                                            {unit.leader.secondary_phone}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-center py-4">
+                                            <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                            <p className="text-gray-500">No leader assigned to this unit</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Unit Members */}
+                            <Card className="border-green-200 dark:border-green-800">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
+                                        <Users className="h-5 w-5" />
+                                        Unit Members
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {unit.members && unit.members.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {unit.members.map((member) => (
+                                                <div key={member.id} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/50 rounded-lg">
+                                                    <div className="flex items-center space-x-3">
+                                                        <Avatar className="h-8 w-8">
+                                                            <AvatarFallback className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                                {member.christian_name[0]}{member.family_name[0]}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div>
+                                                            <div className="font-medium text-green-800 dark:text-green-200">
+                                                                {member.christian_name} {member.family_name}
+                                                            </div>
+                                                            <div className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                                                                <Phone className="w-3 h-3" />
+                                                                {member.phone}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {getStatusBadge(member.status)}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-4">
+                                            <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                            <p className="text-gray-500">No members assigned to this unit</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Action Buttons */}
+                            <div className="flex justify-center gap-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => router.visit('/koabiga/admin/units')}
+                                >
+                                    Back to Units
+                                </Button>
+                                <Button
+                                    onClick={() => router.visit(`/koabiga/admin/units/${unit.id}/edit`)}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                    Edit Unit
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                {/* Stats Cards */}
-                <div className="grid gap-4 md:grid-cols-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Members</CardTitle>
-                            <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{unit.totalMembers}</div>
-                            <p className="text-xs text-muted-foreground">Active members</p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Land Area</CardTitle>
-                            <MapPin className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{unit.totalLand} ha</div>
-                            <p className="text-xs text-muted-foreground">Under cultivation</p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Performance</CardTitle>
-                            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{unit.performance}%</div>
-                            <p className="text-xs text-muted-foreground">Efficiency rating</p>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Status</CardTitle>
-                            <Building2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center gap-2">
-                                {getStatusBadge(unit.status)}
-                            </div>
-                            <p className="text-xs text-muted-foreground">Unit status</p>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Main Content */}
-                <div className="grid gap-6 md:grid-cols-2">
-                    {/* Unit Information */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Building2 className="h-5 w-5" />
-                                Unit Information
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center space-x-3">
-                                <Avatar>
-                                    <AvatarImage src={unit.avatar || undefined} />
-                                    <AvatarFallback>
-                                        {unit.name.split(' ').map(n => n[0]).join('')}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <div className="font-medium">{unit.name}</div>
-                                    <div className="text-sm text-muted-foreground">{unit.code}</div>
-                                </div>
-                            </div>
-                            
-                            <div className="grid gap-3">
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Zone:</span>
-                                    <span className="text-sm">{unit.zone}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Location:</span>
-                                    <span className="text-sm">{unit.location}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Established:</span>
-                                    <span className="text-sm">{unit.establishedDate}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Performance:</span>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm">{unit.performance}%</span>
-                                        {getPerformanceBadge(unit.performance)}
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Unit Leader */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Users className="h-5 w-5" />
-                                Unit Leader
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center space-x-3">
-                                <Avatar>
-                                    <AvatarFallback>
-                                        {unit.leader.split(' ').map(n => n[0]).join('')}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <div className="font-medium">{unit.leader}</div>
-                                    <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                        <Phone className="h-3 w-3" />
-                                        {unit.leaderPhone}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="grid gap-3">
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">ID:</span>
-                                    <span className="text-sm">{unit.leaderId}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Christian Name:</span>
-                                    <span className="text-sm">{unit.leaderChristianName}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Family Name:</span>
-                                    <span className="text-sm">{unit.leaderFamilyName}</span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Crops & Equipment */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Target className="h-5 w-5" />
-                                Crops & Equipment
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <h4 className="font-medium mb-2">Crops Cultivated</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {unit.crops.map((crop, index) => (
-                                        <Badge key={index} variant="outline">{crop}</Badge>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <h4 className="font-medium mb-2">Equipment Available</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {unit.equipment.map((item, index) => (
-                                        <Badge key={index} variant="secondary">{item}</Badge>
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Financial Overview */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5" />
-                                Financial Overview
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-3">
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Total Revenue:</span>
-                                    <span className="text-sm font-semibold text-green-600">{formatCurrency(unit.financials.totalRevenue)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Total Expenses:</span>
-                                    <span className="text-sm font-semibold text-red-600">{formatCurrency(unit.financials.totalExpenses)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Net Profit:</span>
-                                    <span className="text-sm font-semibold text-green-600">{formatCurrency(unit.financials.netProfit)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Profit Margin:</span>
-                                    <span className="text-sm font-semibold text-green-600">{unit.financials.profitMargin}%</span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Achievements */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Award className="h-5 w-5" />
-                            Achievements & Recognition
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-3 md:grid-cols-2">
-                            {unit.achievements.map((achievement, index) => (
-                                <div key={index} className="flex items-start gap-2">
-                                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                                    <span className="text-sm">{achievement}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Recent Activities */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Calendar className="h-5 w-5" />
-                            Recent Activities
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            {unit.recentActivities.map((activity, index) => (
-                                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                    <div className="flex items-center gap-3">
-                                        <CheckCircle className="w-4 h-4 text-green-500" />
-                                        <span className="text-sm font-medium">{activity.activity}</span>
-                                    </div>
-                                    <span className="text-xs text-muted-foreground">{activity.date}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Description */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Description</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{unit.description}</p>
-                    </CardContent>
-                </Card>
             </div>
         </AppLayout>
     );

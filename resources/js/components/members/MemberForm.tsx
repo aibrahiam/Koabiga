@@ -329,20 +329,20 @@ export default function MemberForm({ units, zones, member, onSubmit, isSubmittin
                     </div>
 
                     {/* National ID */}
-                    <div className="space-y-2">
-                        <Label htmlFor="national_id">National ID *</Label>
-                        <Input
-                            id="national_id"
-                            placeholder="Enter national ID"
-                            {...register('national_id')}
-                            className={formErrors.national_id || errors?.national_id ? 'border-red-500' : ''}
-                        />
-                        {(formErrors.national_id || errors?.national_id) && (
-                            <p className="text-sm text-red-600 flex items-center">
-                                <AlertCircle className="w-3 h-3 mr-1" />
-                                {formErrors.national_id?.message || errors?.national_id}
-                            </p>
-                        )}
+                        <div className="space-y-2">
+                            <Label htmlFor="national_id">National ID *</Label>
+                            <Input
+                                id="national_id"
+                                placeholder="Enter national ID"
+                                {...register('national_id')}
+                                className={formErrors.national_id || errors?.national_id ? 'border-red-500' : ''}
+                            />
+                            {(formErrors.national_id || errors?.national_id) && (
+                                <p className="text-sm text-red-600 flex items-center">
+                                    <AlertCircle className="w-3 h-3 mr-1" />
+                                    {formErrors.national_id?.message || errors?.national_id}
+                                </p>
+                            )}
                     </div>
 
                     {/* PIN and Gender */}
@@ -482,7 +482,7 @@ export default function MemberForm({ units, zones, member, onSubmit, isSubmittin
                     )}
 
                     {watchedRole === 'unit_leader' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label htmlFor="zone_id">Zone *</Label>
                                 <Select
@@ -553,50 +553,50 @@ export default function MemberForm({ units, zones, member, onSubmit, isSubmittin
 
                     {watchedRole === 'member' && (
                         <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="unit_id">Unit *</Label>
-                                <Select
-                                    value={watch('unit_id')}
-                                    onValueChange={(value) => setValue('unit_id', value)}
-                                >
-                                    <SelectTrigger className={formErrors.unit_id || errors?.unit_id ? 'border-red-500' : ''}>
-                                        <SelectValue placeholder="Select unit" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {units
-                                            .filter(unit => unit && unit.id && unit.name)
-                                            .map((unit) => (
-                                                <SelectItem key={unit.id} value={String(unit.id)}>
-                                                    <div className="flex items-center space-x-2">
-                                                        <Building2 className="w-4 h-4" />
-                                                        <span>{unit.name} ({unit.code})</span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        {units.filter(unit => unit && unit.id && unit.name).length === 0 && (
-                                            <SelectItem value="" disabled>
-                                                No units available
+                        <div className="space-y-2">
+                            <Label htmlFor="unit_id">Unit *</Label>
+                            <Select
+                                value={watch('unit_id')}
+                                onValueChange={(value) => setValue('unit_id', value)}
+                            >
+                                <SelectTrigger className={formErrors.unit_id || errors?.unit_id ? 'border-red-500' : ''}>
+                                    <SelectValue placeholder="Select unit" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {units
+                                        .filter(unit => unit && unit.id && unit.name)
+                                        .map((unit) => (
+                                            <SelectItem key={unit.id} value={String(unit.id)}>
+                                                <div className="flex items-center space-x-2">
+                                                    <Building2 className="w-4 h-4" />
+                                                    <span>{unit.name} ({unit.code})</span>
+                                                </div>
                                             </SelectItem>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                {(formErrors.unit_id || errors?.unit_id) && (
-                                    <p className="text-sm text-red-600 flex items-center">
-                                        <AlertCircle className="w-3 h-3 mr-1" />
-                                        {formErrors.unit_id?.message || errors?.unit_id}
-                                    </p>
-                                )}
-                            </div>
+                                        ))}
+                                    {units.filter(unit => unit && unit.id && unit.name).length === 0 && (
+                                        <SelectItem value="" disabled>
+                                            No units available
+                                        </SelectItem>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                            {(formErrors.unit_id || errors?.unit_id) && (
+                                <p className="text-sm text-red-600 flex items-center">
+                                    <AlertCircle className="w-3 h-3 mr-1" />
+                                    {formErrors.unit_id?.message || errors?.unit_id}
+                                </p>
+                            )}
+                        </div>
 
                             {selectedUnit && selectedUnit.zone && (
-                                <div className="space-y-2">
+                        <div className="space-y-2">
                                     <Label>Auto-Assigned Zone</Label>
                                     <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
                                         <MapPin className="w-4 h-4 text-green-600" />
                                         <BadgeComponent variant="outline" className="text-sm">
                                             {selectedUnit.zone.name} ({selectedUnit.zone.code})
                                         </BadgeComponent>
-                                    </div>
+                                                </div>
                                     <p className="text-xs text-gray-500">
                                         Zone automatically assigned based on selected unit
                                     </p>
@@ -606,36 +606,36 @@ export default function MemberForm({ units, zones, member, onSubmit, isSubmittin
                     )}
 
                     {/* Status */}
-                    <div className="space-y-2">
-                        <Label htmlFor="status">Status *</Label>
-                        <Select
-                            value={watch('status')}
-                            onValueChange={(value) => setValue('status', value as 'active' | 'inactive')}
-                        >
-                            <SelectTrigger className={formErrors.status || errors?.status ? 'border-red-500' : ''}>
-                                <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="active">
-                                    <div className="flex items-center space-x-2">
-                                        <CheckCircle className="w-4 h-4 text-green-600" />
-                                        <span>Active</span>
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="inactive">
-                                    <div className="flex items-center space-x-2">
-                                        <X className="w-4 h-4 text-red-600" />
-                                        <span>Inactive</span>
-                                    </div>
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {(formErrors.status || errors?.status) && (
-                            <p className="text-sm text-red-600 flex items-center">
-                                <AlertCircle className="w-3 h-3 mr-1" />
-                                {formErrors.status?.message || errors?.status}
-                            </p>
-                        )}
+                        <div className="space-y-2">
+                            <Label htmlFor="status">Status *</Label>
+                            <Select
+                                value={watch('status')}
+                                onValueChange={(value) => setValue('status', value as 'active' | 'inactive')}
+                            >
+                                <SelectTrigger className={formErrors.status || errors?.status ? 'border-red-500' : ''}>
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="active">
+                                        <div className="flex items-center space-x-2">
+                                            <CheckCircle className="w-4 h-4 text-green-600" />
+                                            <span>Active</span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="inactive">
+                                        <div className="flex items-center space-x-2">
+                                            <X className="w-4 h-4 text-red-600" />
+                                            <span>Inactive</span>
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {(formErrors.status || errors?.status) && (
+                                <p className="text-sm text-red-600 flex items-center">
+                                    <AlertCircle className="w-3 h-3 mr-1" />
+                                    {formErrors.status?.message || errors?.status}
+                                </p>
+                            )}
                     </div>
 
                     {/* Submit Button */}

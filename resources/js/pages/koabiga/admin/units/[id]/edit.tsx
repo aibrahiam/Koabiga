@@ -1,213 +1,126 @@
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Head, router } from '@inertiajs/react';
+import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import UnitForm from '@/components/units/UnitForm';
 import AppLayout from '@/layouts/app-layout';
 
-export default function EditUnit() {
-    // Mock data - replace with API call in production
-    const unit = {
-        id: 1,
-        name: 'Unit A',
-        code: 'UA001',
-        leaderChristianName: 'Sarah',
-        leaderFamilyName: 'Smith',
-        leaderPhone: '0723456789',
-        location: 'North Region',
-        status: 'active',
-        totalLand: '180',
-        zoneId: '1',
+interface Unit {
+    id: number;
+    name: string;
+    code: string;
+    zone_id: number;
+    leader_id?: number;
+    status: 'active' | 'inactive';
+    zone: {
+        id: number;
+        name: string;
+        code: string;
     };
+    leader?: {
+        id: number;
+        christian_name: string;
+        family_name: string;
+        phone: string;
+        secondary_phone?: string;
+    };
+}
 
-    // Mock zones data - replace with API call in production
-    const zones = [
-        { id: 1, name: 'North Zone' },
-        { id: 2, name: 'South Zone' },
-        { id: 3, name: 'East Zone' },
-        { id: 4, name: 'West Zone' },
-        { id: 5, name: 'Central Zone' },
-    ];
+interface Zone {
+    id: number;
+    name: string;
+    code: string;
+}
 
-    const { data, setData, post, processing, errors } = useForm({
-        name: unit.name,
-        code: unit.code,
-        leaderChristianName: unit.leaderChristianName,
-        leaderFamilyName: unit.leaderFamilyName,
-        leaderPhone: unit.leaderPhone,
-        location: unit.location,
-        status: unit.status,
-        totalLand: unit.totalLand,
-        zoneId: unit.zoneId,
-    });
+interface Leader {
+    id: number;
+    christian_name: string;
+    family_name: string;
+    phone: string;
+    secondary_phone?: string;
+}
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // post(`/koabiga/admin/units/${unit.id}`); // Uncomment and adjust for real backend
-        alert('Unit updated successfully! (mock)');
+interface EditUnitProps {
+    unit: Unit;
+    zones: Zone[];
+    leaders: Leader[];
+}
+
+export default function EditUnit({ unit, zones, leaders }: EditUnitProps) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const handleSubmit = async (data: any) => {
+        setIsSubmitting(true);
+        setErrors({});
+
+        try {
+            await router.put(`/koabiga/admin/units/${unit.id}`, data, {
+                onSuccess: () => {
+                    router.visit('/koabiga/admin/units');
+                },
+                onError: (errors) => {
+                    setErrors(errors);
+                    setIsSubmitting(false);
+                }
+            });
+        } catch (error) {
+            console.error('Error updating unit:', error);
+            setIsSubmitting(false);
+        }
     };
 
     return (
         <AppLayout breadcrumbs={[
-            { title: 'Admin Dashboard', href: '/koabiga/admin/dashboard' },
-            { title: 'Units', href: '/koabiga/admin/units' },
-            { title: unit.name, href: `/koabiga/admin/units/${unit.id}` },
-            { title: 'Edit Unit', href: `/koabiga/admin/units/${unit.id}/edit` },
+            { title: 'Admin', href: '/koabiga/admin' },
+            { title: 'Units Management', href: '/koabiga/admin/units' },
+            { title: `Edit ${unit.name}`, href: `/koabiga/admin/units/${unit.id}/edit` }
         ]}>
             <Head title={`Edit ${unit.name} - Koabiga Admin`} />
             
-            <div className="flex h-full flex-1 flex-col gap-6 p-6 items-center">
+            <div className="flex flex-col items-center justify-center min-h-screen py-8">
+                <div className="w-full max-w-4xl space-y-6">
+
                 {/* Header */}
-                <div className="w-full max-w-2xl">
-                    <div className="flex items-center mb-4">
-                        <Link href={`/koabiga/admin/units/${unit.id}`}>
-                            <Button variant="outline" size="sm">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back to Unit
-                            </Button>
-                        </Link>
-                    </div>
-                    <div className="text-center">
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Edit Unit</h1>
-                        <p className="text-gray-600 dark:text-gray-400">Update unit information</p>
+                    <div className="text-center space-y-4">
+                        <div>
+                            <h1 className="text-3xl font-bold text-green-800 dark:text-green-200">
+                                Edit Unit: {unit.name}
+                            </h1>
+                            <p className="text-green-600 dark:text-green-300 mt-1">
+                                Update unit information and assignments
+                            </p>
                     </div>
                 </div>
 
-                {/* Edit Form */}
-                <Card className="w-full max-w-2xl">
-                    <CardHeader>
-                        <CardTitle>Edit Unit Information</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Form */}
+                    <div className="flex justify-center">
+                        <div className="w-full max-w-4xl space-y-4">
+                            {/* Back Button */}
                             <div>
-                                <label className="block mb-1 font-medium">Unit Name</label>
-                                <Input
-                                    value={data.name}
-                                    onChange={e => setData('name', e.target.value)}
-                                    placeholder="Unit Name"
-                                    required
-                                />
-                                {errors.name && <div className="text-red-600 text-sm mt-1">{errors.name}</div>}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => router.visit('/koabiga/admin/units')}
+                                    className="flex items-center"
+                                >
+                                    <ArrowLeft className="w-4 h-4 mr-2" />
+                                    Back
+                                </Button>
                             </div>
 
-                            <div>
-                                <label className="block mb-1 font-medium">Zone</label>
-                                <Select value={data.zoneId} onValueChange={value => setData('zoneId', value)} required>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select zone" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {zones
-                                            .filter(zone => zone && zone.id && zone.name)
-                                            .map((zone) => (
-                                                <SelectItem key={zone.id} value={String(zone.id)}>
-                                                    {zone.name}
-                                                </SelectItem>
-                                            ))}
-                                        {zones.filter(zone => zone && zone.id && zone.name).length === 0 && (
-                                            <SelectItem value="none" disabled>
-                                                No zones available
-                                            </SelectItem>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                {errors.zoneId && <div className="text-red-600 text-sm mt-1">{errors.zoneId}</div>}
-                            </div>
-
-                            <div>
-                                <label className="block mb-1 font-medium">Unit Code</label>
-                                <Input
-                                    value={data.code}
-                                    onChange={e => setData('code', e.target.value)}
-                                    placeholder="Unit Code"
-                                    required
-                                />
-                                {errors.code && <div className="text-red-600 text-sm mt-1">{errors.code}</div>}
-                            </div>
-
-                            <div>
-                                <label className="block mb-1 font-medium">Unit Leader</label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Input
-                                        value={data.leaderChristianName}
-                                        onChange={e => setData('leaderChristianName', e.target.value)}
-                                        placeholder="Christian Name"
-                                        required
-                                    />
-                                    <Input
-                                        value={data.leaderFamilyName}
-                                        onChange={e => setData('leaderFamilyName', e.target.value)}
-                                        placeholder="Family Name"
-                                        required
+                            <UnitForm
+                                zones={zones}
+                                leaders={leaders}
+                                unit={unit}
+                                onSubmit={handleSubmit}
+                                isSubmitting={isSubmitting}
+                                errors={errors}
+                                onCancel={() => router.visit('/koabiga/admin/units')}
                                     />
                                 </div>
-                                {(errors.leaderChristianName || errors.leaderFamilyName) && (
-                                    <div className="text-red-600 text-sm mt-1">
-                                        {errors.leaderChristianName || errors.leaderFamilyName}
-                                    </div>
-                                )}
                             </div>
-
-                            <div>
-                                <label className="block mb-1 font-medium">Leader Phone</label>
-                                <Input
-                                    value={data.leaderPhone}
-                                    onChange={e => setData('leaderPhone', e.target.value)}
-                                    placeholder="Phone Number"
-                                    required
-                                />
-                                {errors.leaderPhone && <div className="text-red-600 text-sm mt-1">{errors.leaderPhone}</div>}
                             </div>
-
-                            <div>
-                                <label className="block mb-1 font-medium">Location</label>
-                                <Input
-                                    value={data.location}
-                                    onChange={e => setData('location', e.target.value)}
-                                    placeholder="Location"
-                                    required
-                                />
-                                {errors.location && <div className="text-red-600 text-sm mt-1">{errors.location}</div>}
-                            </div>
-
-                            <div>
-                                <label className="block mb-1 font-medium">Status</label>
-                                <Select value={data.status} onValueChange={value => setData('status', value)} required>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="active">Active</SelectItem>
-                                        <SelectItem value="inactive">Inactive</SelectItem>
-                                        <SelectItem value="suspended">Suspended</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                {errors.status && <div className="text-red-600 text-sm mt-1">{errors.status}</div>}
-                            </div>
-
-                            <div>
-                                <label className="block mb-1 font-medium">Total Land (ha)</label>
-                                <Input
-                                    type="number"
-                                    value={data.totalLand}
-                                    onChange={e => setData('totalLand', e.target.value.replace(/[^0-9.]/g, ''))}
-                                    placeholder="Total Land in hectares"
-                                    required
-                                />
-                                {errors.totalLand && <div className="text-red-600 text-sm mt-1">{errors.totalLand}</div>}
-                            </div>
-
-                            <div className="flex gap-2 justify-end">
-                                <Link href={`/koabiga/admin/units/${unit.id}`}>
-                                    <Button type="button" variant="outline">Cancel</Button>
-                                </Link>
-                                <Button type="submit" disabled={processing}>Update Unit</Button>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
             </div>
         </AppLayout>
     );

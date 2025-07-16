@@ -48,9 +48,7 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
     Route::get('members/{id}/edit', [\App\Http\Controllers\Admin\MemberController::class, 'edit'])->name('members.edit');
     
     // Units Management
-    Route::get('units', [\App\Http\Controllers\Admin\UnitController::class, 'index'])->name('units');
-    
-    Route::resource('units', \App\Http\Controllers\Admin\UnitController::class)->names([
+    Route::resource('units', \App\Http\Controllers\UnitController::class)->names([
         'index' => 'units.index',
         'create' => 'units.create',
         'store' => 'units.store',
@@ -59,6 +57,8 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
         'update' => 'units.update',
         'destroy' => 'units.destroy',
     ]);
+
+
 
     Route::get('units/{id}/members', function ($id) {
         return Inertia::render('koabiga/admin/units/[id]/members', [
@@ -71,10 +71,6 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
             ]
         ]);
     })->name('units.members');
-
-    Route::get('units/{id}/view', function ($id) {
-        return Inertia::render('koabiga/admin/units/[id]/view', ['id' => $id]);
-    })->name('units.view');
     
     // Reports Management
     Route::get('reports', function () {
