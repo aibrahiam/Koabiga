@@ -176,7 +176,7 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
 // Koabiga Members Routes
 Route::prefix('koabiga/members')->name('koabiga.members.')->middleware(['auth', 'role:member'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('koabiga/member/dashboard'); // Use the member dashboard
+        return Inertia::render('koabiga/member/member_dashboard'); // Use the member dashboard
     })->name('dashboard');
     
     Route::get('land', function () {
@@ -206,7 +206,7 @@ Route::prefix('koabiga/members')->name('koabiga.members.')->middleware(['auth', 
 });
 
 // Koabiga Leaders Routes
-Route::prefix('koabiga/leaders')->name('koabiga.leaders.')->middleware(['auth', 'verified', 'role:unit_leader'])->group(function () {
+Route::prefix('koabiga/leaders')->name('koabiga.leaders.')->middleware(['auth', 'verified', 'role:unit_leader,zone_leader'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('koabiga/leaders/leader-dashboard');
     })->name('dashboard');
@@ -240,9 +240,7 @@ Route::prefix('koabiga/leaders')->name('koabiga.leaders.')->middleware(['auth', 
         return Inertia::render('koabiga/leaders/forms/dynamic-form', ['formId' => $formId]);
     })->name('forms.dynamic');
     
-    Route::get('forms/member-creation', function () {
-        return Inertia::render('koabiga/leaders/forms/member-creation');
-    })->name('forms.member-creation');
+    Route::get('forms/member-creation', [\App\Http\Controllers\LeaderFormController::class, 'memberCreation'])->name('forms.member-creation');
     
     Route::get('forms/land-assignment', function () {
         return Inertia::render('koabiga/leaders/forms/land-assignment');

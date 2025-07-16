@@ -252,15 +252,7 @@ export default function UnitLeaderDashboard() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Unit Leader Dashboard</h1>
-                        <p className="text-gray-600 dark:text-gray-400">
-                            Manage your agricultural unit operations
-                            {unitStats && (
-                                <span className="ml-2 text-sm font-medium text-green-600">
-                                    {unitStats.unitName} ({unitStats.unitCode})
-                                </span>
-                            )}
-                        </p>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Leaders Dashboard</h1>
                     </div>
                     <Badge variant="secondary" className="text-sm">
                         Unit Leader
@@ -320,6 +312,16 @@ export default function UnitLeaderDashboard() {
                             </p>
                         </CardContent>
                     </Card>
+                </div>
+
+                {/* Add Member Button */}
+                <div className="flex justify-center">
+                    <Link href="/koabiga/leaders/forms/member-creation">
+                        <Button className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add New Member
+                        </Button>
+                    </Link>
                 </div>
 
                 {/* Quick Actions */}
@@ -487,15 +489,7 @@ export default function UnitLeaderDashboard() {
                     </CardContent>
                 </Card>
 
-                {/* Quick Add Member Button */}
-                <div className="flex justify-center">
-                                            <Link href="/koabiga/leaders/forms/member-creation">
-                        <Button className="flex items-center gap-2">
-                            <Plus className="h-4 w-4" />
-                            Add New Member
-                        </Button>
-                    </Link>
-                </div>
+
             </div>
         </UnitLeaderLayout>
     );

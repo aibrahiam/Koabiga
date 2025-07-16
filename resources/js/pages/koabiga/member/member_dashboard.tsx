@@ -80,21 +80,21 @@ export default function MemberDashboard() {
 
                 // Fetch dashboard statistics
                 console.log('Fetching dashboard stats...');
-                const statsResponse = await axios.get('/api/member/dashboard/stats');
+                const statsResponse = await axios.get('/member/dashboard/stats');
                 if (statsResponse.data.success) {
                     setStats(statsResponse.data.data);
                 }
 
                 // Fetch recent activities
                 console.log('Fetching recent activities...');
-                const activitiesResponse = await axios.get('/api/member/dashboard/activities');
+                const activitiesResponse = await axios.get('/member/dashboard/activities');
                 if (activitiesResponse.data.success) {
                     setRecentActivities(activitiesResponse.data.data);
                     }
 
                 // Fetch upcoming fees
                 console.log('Fetching upcoming fees...');
-                const feesResponse = await axios.get('/api/member/dashboard/upcoming-fees');
+                const feesResponse = await axios.get('/member/dashboard/upcoming-fees');
                 if (feesResponse.data.success) {
                     setUpcomingFees(feesResponse.data.data);
                 }

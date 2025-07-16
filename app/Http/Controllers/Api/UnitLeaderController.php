@@ -499,31 +499,21 @@ class UnitLeaderController extends Controller
         try {
             $user = Auth::user();
             
-            if (!$user || $user->role !== 'unit_leader') {
+            if (!$user || !in_array($user->role, ['unit_leader', 'zone_leader'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Access denied. Unit leader privileges required.'
+                    'message' => 'Access denied. Leader privileges required.'
                 ], 403);
             }
 
-            $unit = $user->unit;
-            
-            if (!$unit) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No unit assigned to this leader.'
-                ], 400);
-            }
-
+            // Validate required fields
             $request->validate([
                 'christian_name' => 'required|string|max:255',
                 'family_name' => 'required|string|max:255',
                 'phone' => 'required|string|max:20|unique:users,phone',
                 'secondary_phone' => 'nullable|string|max:20|unique:users,secondary_phone',
-                'email' => 'nullable|email|unique:users,email',
-                'id_passport' => 'required|string|max:50|unique:users,id_passport',
-                'password' => 'required|string|min:4|max:6',
-                'password_confirmation' => 'required|same:password',
+                'gender' => 'required|in:male,female',
+                'national_id' => 'required|string|max:25|unique:users,id_passport',
                 'unit_id' => 'nullable|exists:units,id'
             ]);
 
@@ -536,12 +526,63 @@ class UnitLeaderController extends Controller
                 ], 422);
             }
 
+            // Role-based logic for unit/zone assignment
             $memberData = $request->all();
             $memberData['role'] = 'member';
-            $memberData['unit_id'] = $memberData['unit_id'] ?? $unit->id;
+            $memberData['pin'] = Hash::make('12123'); // Default PIN
             $memberData['status'] = 'active';
 
+            if ($user->role === 'unit_leader') {
+                // Unit leaders can only assign to their own unit
+                $unit = $user->unit;
+                if (!$unit) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No unit assigned to this leader.'
+                    ], 400);
+                }
+                $memberData['unit_id'] = $unit->id;
+                $memberData['zone_id'] = $unit->zone_id;
+            } else if ($user->role === 'zone_leader') {
+                // Zone leaders can assign to any unit in their zone
+                if (!$request->unit_id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unit selection is required for zone leaders.'
+                    ], 422);
+                }
+
+                $unit = Unit::where('id', $request->unit_id)
+                    ->where('zone_id', $user->zone_id)
+                    ->first();
+
+                if (!$unit) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Selected unit is not in your zone.'
+                    ], 422);
+                }
+
+                $memberData['unit_id'] = $unit->id;
+                $memberData['zone_id'] = $user->zone_id;
+            }
+
+            // Normalize phone numbers
+            $memberData['phone'] = $this->normalizePhone($memberData['phone']);
+            if ($memberData['secondary_phone']) {
+                $memberData['secondary_phone'] = $this->normalizePhone($memberData['secondary_phone']);
+            }
+
             $member = User::create($memberData);
+
+            // Log activity
+            ActivityLog::create([
+                'user_id' => $user->id,
+                'action' => 'create_member',
+                'description' => "Created new member: {$member->christian_name} {$member->family_name}",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -1592,4 +1633,29 @@ class UnitLeaderController extends Controller
         }
     }
 
+    /**
+     * Normalize phone number to 10-digit format
+     */
+    private function normalizePhone($phone): string
+    {
+        // Remove all non-digit characters
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        // If it starts with 0, remove it
+        if (strlen($phone) === 10 && $phone[0] === '0') {
+            $phone = substr($phone, 1);
+        }
+        
+        // If it's 9 digits, add 0 at the beginning
+        if (strlen($phone) === 9) {
+            $phone = '0' . $phone;
+        }
+        
+        // Ensure it's exactly 10 digits
+        if (strlen($phone) !== 10) {
+            throw new \InvalidArgumentException('Phone number must be exactly 10 digits');
+        }
+        
+        return $phone;
+    }
 } 

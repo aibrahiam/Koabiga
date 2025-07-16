@@ -43,15 +43,15 @@ export default function MemberReports() {
                 setError(null);
                 
                 // Fetch lands with related data
-                const landsResponse = await axios.get('/api/member/land');
+                const landsResponse = await axios.get('/member/land');
                 const lands = landsResponse.data;
                 
                 // Fetch crops for all lands
-                const cropsResponse = await axios.get('/api/member/crops');
+                const cropsResponse = await axios.get('/member/crops');
                 const crops = cropsResponse.data;
                 
                 // Fetch produce for all crops
-                const produceResponse = await axios.get('/api/member/produce');
+                const produceResponse = await axios.get('/member/produce');
                 const produce = produceResponse.data;
                 
                 // Process data into report format

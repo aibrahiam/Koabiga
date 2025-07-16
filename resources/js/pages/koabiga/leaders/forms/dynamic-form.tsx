@@ -234,7 +234,7 @@ export default function DynamicForm({ formId }: DynamicFormProps) {
             if (response.data.success) {
                 setSuccess('Form submitted successfully!');
                 setTimeout(() => {
-                    router.visit('/koabiga/unit-leader/forms');
+                    router.visit('/koabiga/leaders/forms');
                 }, 2000);
             } else {
                 setError(response.data.message || 'Failed to submit form');
@@ -248,7 +248,7 @@ export default function DynamicForm({ formId }: DynamicFormProps) {
     };
 
     const handleCancel = () => {
-        router.visit('/koabiga/unit-leader/forms');
+        router.visit('/koabiga/leaders/forms');
     };
 
     const renderField = (field: FormField) => {

@@ -164,6 +164,19 @@ Route::prefix('admin')->middleware(['web', 'auth:web', 'role:admin'])->group(fun
         Route::get('/export', [MemberController::class, 'export']);
     });
 
+    // Leader Member Creation
+    Route::post('/members', [UnitLeaderController::class, 'createMember']);
+});
+
+// Member API Routes
+Route::prefix('member')->middleware(['web', 'auth:web', 'role:member'])->group(function () {
+    Route::get('/dashboard/stats', [MemberController::class, 'getDashboardStats']);
+    Route::get('/dashboard/activities', [MemberController::class, 'getRecentActivities']);
+    Route::get('/dashboard/upcoming-fees', [MemberController::class, 'getUpcomingFees']);
+    Route::get('/land', [MemberController::class, 'getLand']);
+    Route::get('/crops', [MemberController::class, 'getCrops']);
+    Route::get('/produce', [MemberController::class, 'getProduce']);
+
     // Units Management
     Route::prefix('units')->group(function () {
         Route::get('/', [UnitController::class, 'index']);
@@ -256,7 +269,7 @@ Route::prefix('system')->group(function () {
 });
 
 // Leaders API Routes
-Route::prefix('leaders')->middleware(['web', 'auth:web', 'role:unit_leader'])->group(function () {
+Route::prefix('leaders')->middleware(['web', 'auth:web', 'role:unit_leader,zone_leader'])->group(function () {
     Route::get('/stats', [UnitLeaderController::class, 'stats']);
     Route::get('/unit', [UnitLeaderController::class, 'getUnit']);
     Route::get('/activities', [UnitLeaderController::class, 'activities']);
@@ -305,9 +318,10 @@ Route::prefix('leaders')->middleware(['web', 'auth:web', 'role:unit_leader'])->g
 
 // Member API Routes
 Route::prefix('member')->middleware(['web', 'auth:web', 'role:member'])->group(function () {
-    Route::prefix('dashboard')->group(function () {
-        Route::get('/stats', [MemberDashboardController::class, 'stats']);
-        Route::get('/activities', [MemberDashboardController::class, 'activities']);
-        Route::get('/upcoming-fees', [MemberDashboardController::class, 'upcomingFees']);
-    });
+    Route::get('/dashboard/stats', [MemberController::class, 'getDashboardStats']);
+    Route::get('/dashboard/activities', [MemberController::class, 'getRecentActivities']);
+    Route::get('/dashboard/upcoming-fees', [MemberController::class, 'getUpcomingFees']);
+    Route::get('/land', [MemberController::class, 'getLand']);
+    Route::get('/crops', [MemberController::class, 'getCrops']);
+    Route::get('/produce', [MemberController::class, 'getProduce']);
 });
