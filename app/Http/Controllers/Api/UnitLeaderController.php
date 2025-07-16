@@ -120,7 +120,7 @@ class UnitLeaderController extends Controller
 
             $activeCrops = Crop::whereHas('land', function ($query) use ($unit) {
                 $query->where('unit_id', $unit->id);
-            })->where('status', 'active')->count();
+            })->count();
 
             $monthlyProduce = Produce::whereHas('crop.land', function ($query) use ($unit) {
                 $query->where('unit_id', $unit->id);

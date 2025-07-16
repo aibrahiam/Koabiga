@@ -68,9 +68,9 @@ class Crop extends Model
     }
 
     /**
-     * Scope to get active crops
+     * Scope to get crops from active users
      */
-    public function scopeActive($query)
+    public function scopeFromActiveUsers($query)
     {
         return $query->whereHas('user', function ($q) {
             $q->where('status', 'active');

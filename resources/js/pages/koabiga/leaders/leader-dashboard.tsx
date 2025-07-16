@@ -336,11 +336,11 @@ export default function UnitLeaderDashboard() {
                                     <Link key={action.title} href={action.href} className="contents">
                                         <Card className="cursor-pointer hover:shadow-md transition-shadow">
                                             <CardContent className="p-3 sm:p-4 md:p-6">
-                                                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                                                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                                                     <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${action.color} flex items-center justify-center mx-auto sm:mx-0`}>
                                                         <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                                                     </div>
-                                                    <div className="flex-1 text-center sm:text-left">
+                                                    <div className="flex-1 text-center sm:text-left sm:pl-2">
                                                         <h3 className="font-medium text-xs sm:text-sm">{action.title}</h3>
                                                         <p className="text-xs text-muted-foreground hidden sm:block">{action.description}</p>
                                                     </div>
