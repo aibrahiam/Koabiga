@@ -20,7 +20,7 @@ class TestAuth extends Command
 
         // Test the normalizePhoneNumber method
         $normalizedPhone = User::normalizePhoneNumber($phone);
-        $this->info("Normalized phone: {$normalizedPhone}");
+        $this->info("Normalized phone (10-digit): {$normalizedPhone}");
 
         // Find user by phone
         $user = User::where(function ($query) use ($normalizedPhone) {
@@ -32,6 +32,10 @@ class TestAuth extends Command
 
         if (!$user) {
             $this->error("No user found with phone: {$phone}");
+            $this->info("Checking all users in database:");
+            User::whereIn('role', ['member', 'unit_leader', 'zone_leader'])->get()->each(function($u) {
+                $this->line("  - ID: {$u->id}, Name: {$u->christian_name} {$u->family_name}, Phone: {$u->phone}, Role: {$u->role}");
+            });
             return;
         }
 

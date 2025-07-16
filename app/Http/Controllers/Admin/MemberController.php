@@ -122,6 +122,12 @@ class MemberController extends Controller
                 break;
         }
 
+        // Normalize phone numbers to 10-digit format
+        $validated['phone'] = User::normalizePhoneNumber($validated['phone']);
+        if ($validated['secondary_phone']) {
+            $validated['secondary_phone'] = User::normalizePhoneNumber($validated['secondary_phone']);
+        }
+        
         // Hash the PIN
         $validated['pin'] = Hash::make($validated['pin']);
         
@@ -193,6 +199,12 @@ class MemberController extends Controller
             return back()->withErrors(['secondary_phone' => 'Secondary phone number cannot be the same as primary phone number.']);
         }
 
+        // Normalize phone numbers to 10-digit format
+        $validated['phone'] = User::normalizePhoneNumber($validated['phone']);
+        if ($validated['secondary_phone']) {
+            $validated['secondary_phone'] = User::normalizePhoneNumber($validated['secondary_phone']);
+        }
+        
         // Hash the PIN
         $validated['pin'] = Hash::make($validated['pin']);
 

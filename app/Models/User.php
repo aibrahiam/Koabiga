@@ -149,26 +149,26 @@ class User extends Authenticatable
     }
 
     /**
-     * Normalize phone number to include Rwanda country code if needed
+     * Normalize phone number to 10-digit format (07XXXXXXXX)
      */
     public static function normalizePhoneNumber(string $phone): string
     {
         // Remove any non-digit characters
         $phone = preg_replace('/[^0-9]/', '', $phone);
         
-        // If it's already 12 digits and starts with 250, return as is
-        if (strlen($phone) === 12 && strpos($phone, '250') === 0) {
+        // If it's already 10 digits and starts with 07, return as is
+        if (strlen($phone) === 10 && strpos($phone, '07') === 0) {
             return $phone;
         }
         
-        // If it's 10 digits and starts with 07, add 250 prefix
-        if (strlen($phone) === 10 && strpos($phone, '07') === 0) {
-            return '250' . $phone;
+        // If it's 12 digits and starts with 250, remove the prefix
+        if (strlen($phone) === 12 && strpos($phone, '250') === 0) {
+            return substr($phone, 3); // Remove '250' prefix
         }
         
-        // If it's 9 digits and starts with 7, add 250 prefix
+        // If it's 9 digits and starts with 7, add 0 prefix
         if (strlen($phone) === 9 && strpos($phone, '7') === 0) {
-            return '250' . $phone;
+            return '0' . $phone;
         }
         
         // Return as is if it doesn't match any pattern
@@ -176,7 +176,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Format phone number for display (remove country code for local display)
+     * Format phone number for display (ensure 10-digit format)
      */
     public static function formatPhoneForDisplay(string $phone): string
     {
@@ -186,6 +186,11 @@ class User extends Authenticatable
         // If it's 12 digits and starts with 250, remove the prefix
         if (strlen($phone) === 12 && strpos($phone, '250') === 0) {
             return substr($phone, 3); // Remove '250' prefix
+        }
+        
+        // If it's 9 digits and starts with 7, add 0 prefix
+        if (strlen($phone) === 9 && strpos($phone, '7') === 0) {
+            return '0' . $phone;
         }
         
         // Return as is if it doesn't match the pattern
