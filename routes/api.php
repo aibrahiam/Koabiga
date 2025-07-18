@@ -42,15 +42,6 @@ Route::middleware(['web'])->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-// Test route for debugging
-Route::post('/test-leaders-login', function (Request $request) {
-    return response()->json([
-        'message' => 'Test route working',
-        'received_data' => $request->all(),
-        'headers' => $request->headers->all()
-    ]);
-});
-
 // Debug route to test authentication
 Route::get('/debug/auth', function () {
     return response()->json([
@@ -73,47 +64,6 @@ Route::get('/debug/session', function () {
         'cookies' => request()->cookies->all(),
     ]);
 });
-
-// Test login route to debug authentication
-Route::post('/test-login', function (Request $request) {
-    $email = $request->input('email');
-    $password = $request->input('password');
-    
-    // Test authentication
-    $user = \App\Models\User::authenticateAdmin($email, $password);
-    
-    if (!$user) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Invalid credentials'
-        ], 401);
-    }
-    
-    // Log in the user
-    Auth::login($user);
-    
-    // Regenerate session
-    $request->session()->regenerate();
-    
-    // Set session data
-    $request->session()->put('user_id', $user->id);
-    $request->session()->put('user_role', $user->role);
-    $request->session()->save();
-    
-    return response()->json([
-        'success' => true,
-        'message' => 'Login successful',
-        'user' => [
-            'id' => $user->id,
-            'email' => $user->email,
-            'role' => $user->role,
-        ],
-        'session_id' => $request->session()->getId(),
-        'authenticated' => Auth::check(),
-    ]);
-});
-
-
 
 // Admin API Routes (Protected)
 Route::prefix('admin')->middleware(['web', 'auth:web', 'role:admin'])->group(function () {

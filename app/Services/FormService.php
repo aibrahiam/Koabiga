@@ -565,21 +565,65 @@ export default function {$componentName}Form() {
     {
         $fields = [];
         
-        // Look for form field patterns
+        // Look for form field patterns in the formData interface or form fields
         $fieldPatterns = [
-            '/name\s*[:=]\s*["\']([^"\']+)["\']/',
-            '/label\s*[:=]\s*["\']([^"\']+)["\']/',
-            '/type\s*[:=]\s*["\']([^"\']+)["\']/',
+            // Look for form field definitions in the interface
+            '/interface\s+FormData\s*\{([^}]+)\}/s',
+            // Look for form field definitions in useState
+            '/useState<FormData>\(\(\{([^}]+)\}\)/s',
+            // Look for form field definitions in the form
+            '/formData\s*[:=]\s*\{([^}]+)\}/s',
         ];
 
-        // Extract field names
-        if (preg_match_all('/name\s*[:=]\s*["\']([^"\']+)["\']/', $content, $matches)) {
-            foreach ($matches[1] as $index => $name) {
-                if (!in_array($name, ['form-title', 'form-type', 'form-category', 'form-description'])) {
+        foreach ($fieldPatterns as $pattern) {
+            if (preg_match($pattern, $content, $matches)) {
+                $fieldContent = $matches[1];
+                
+                // Extract field names from the content
+                if (preg_match_all('/(\w+)\s*:\s*["\']?[^"\',\s]+["\']?/', $fieldContent, $fieldMatches)) {
+                    foreach ($fieldMatches[1] as $fieldName) {
+                        // Skip common non-field properties
+                        if (in_array($fieldName, ['id', 'title', 'type', 'category', 'description', 'status', 'target_roles', 'created_at', 'updated_at'])) {
+                            continue;
+                        }
+                        
+                        // Skip validation-related properties
+                        if (str_contains($fieldName, 'error') || str_contains($fieldName, 'required') || str_contains($fieldName, 'valid')) {
+                            continue;
+                        }
+                        
+                        $fields[] = [
+                            'name' => $fieldName,
+                            'type' => 'text', // Default type
+                            'label' => Str::title(str_replace(['_', '-'], ' ', $fieldName)),
+                            'required' => false,
+                            'placeholder' => '',
+                            'description' => '',
+                        ];
+                    }
+                }
+            }
+        }
+
+        // If no fields found in patterns, try to extract from form inputs
+        if (empty($fields)) {
+            // Look for input fields with name attributes
+            if (preg_match_all('/name\s*[:=]\s*["\']([^"\']+)["\']/', $content, $matches)) {
+                foreach ($matches[1] as $name) {
+                    // Skip common non-field names
+                    if (in_array($name, ['form-title', 'form-type', 'form-category', 'form-description', 'csrf_token'])) {
+                        continue;
+                    }
+                    
+                    // Skip validation error messages
+                    if (str_contains($name, 'error') || str_contains($name, 'required') || str_contains($name, 'valid')) {
+                        continue;
+                    }
+                    
                     $fields[] = [
                         'name' => $name,
                         'type' => 'text',
-                        'label' => Str::title(str_replace('_', ' ', $name)),
+                        'label' => Str::title(str_replace(['_', '-'], ' ', $name)),
                         'required' => false,
                         'placeholder' => '',
                         'description' => '',

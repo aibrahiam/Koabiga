@@ -76,7 +76,7 @@ export default function AdminForms() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [availableForms, setAvailableForms] = useState<any[]>([]);
-    const [showAvailableForms, setShowAvailableForms] = useState(false);
+    const [showAvailableForms, setShowAvailableForms] = useState(true); // Show by default
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [creatingForm, setCreatingForm] = useState(false);
     
@@ -121,56 +121,27 @@ export default function AdminForms() {
         try {
             setLoading(true);
             setError(null);
-            
-            console.log('Fetching admin forms with params:', {
-                search: searchTerm,
-                type: typeFilter,
-                category: categoryFilter,
-                status: statusFilter
-            });
-            
+
             const params = new URLSearchParams({
                 search: searchTerm,
                 type: typeFilter,
                 category: categoryFilter,
                 status: statusFilter,
-                per_page: 'all' // Get all forms without pagination
+                per_page: 'all'
             });
-            
-            console.log('Making API call to:', `/api/admin/forms?${params}`);
-            
-            const response = await axios.get(`/api/admin/forms?${params}`);
-            
-            console.log('Admin forms API response:', response.data);
+
+            const response = await axios.get(`/admin/forms?${params}`);
             
             if (response.data.success) {
-                const formsData = response.data.data;
-                console.log('Raw forms data:', formsData);
-                
-                if (Array.isArray(formsData)) {
-                    // Direct array response
-                    setForms(formsData);
-                    console.log('Forms loaded (direct array):', formsData.length);
-                } else if (formsData && formsData.data) {
-                    // Paginated response (fallback)
-                    setForms(formsData.data || []);
-                    console.log('Forms loaded (paginated):', formsData.data?.length || 0);
-                } else {
-                    // Fallback
-                    setForms([]);
-                    console.log('No forms found in response');
-                }
+                setForms(response.data.data);
             } else {
-                console.error('API returned error:', response.data.message);
                 setError(response.data.message || 'Failed to fetch forms');
-                setForms([]);
             }
         } catch (err: any) {
             console.error('Error fetching admin forms:', err);
-            console.error('Error response:', err.response?.data);
+            console.error('Error response:', err.response);
             console.error('Error status:', err.response?.status);
-            setError('Failed to load forms. Please try again.');
-            setForms([]);
+            setError(err.response?.data?.message || 'Failed to fetch forms. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -178,12 +149,25 @@ export default function AdminForms() {
 
     const fetchAvailableForms = async () => {
         try {
-            const response = await axios.get('/api/admin/forms/available');
+            console.log('Fetching available forms...');
+            console.log('Making API call to /admin/forms/available');
+            
+            const response = await axios.get('/admin/forms/available');
+            console.log('Available forms response:', response);
+            console.log('Response data:', response.data);
+            
             if (response.data.success) {
+                console.log('Setting available forms:', response.data.data);
                 setAvailableForms(response.data.data);
+                console.log('Available forms state updated');
+            } else {
+                console.error('Failed to fetch available forms:', response.data.message);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error fetching available forms:', err);
+            console.error('Error response:', err.response);
+            console.error('Error status:', err.response?.status);
+            console.error('Error data:', err.response?.data);
         }
     };
 
@@ -192,7 +176,7 @@ export default function AdminForms() {
             setCreatingForm(true);
             setError(null);
 
-            const response = await axios.post('/api/admin/forms/create-file', newFormData);
+            const response = await axios.post('/admin/forms/create-file', newFormData);
             
             if (response.data.success) {
                 setSuccess('Form created successfully in leaders folder!');
@@ -222,7 +206,7 @@ export default function AdminForms() {
     const deleteFormFile = async (formName: string) => {
         if (confirm('Are you sure you want to delete this form file? This action cannot be undone.')) {
             try {
-                const response = await axios.delete(`/api/admin/forms/delete-file/${formName}`);
+                const response = await axios.delete(`/admin/forms/delete-file/${formName}`);
                 
                 if (response.data.success) {
                     setSuccess('Form file deleted successfully!');
@@ -239,7 +223,9 @@ export default function AdminForms() {
     };
 
     useEffect(() => {
+        console.log('useEffect called - fetching forms and available forms');
         fetchForms();
+        fetchAvailableForms(); // Also fetch available forms from the folder
     }, [searchTerm, typeFilter, categoryFilter, statusFilter]);
 
     const getStatusBadge = (status: string) => {
@@ -355,7 +341,7 @@ export default function AdminForms() {
 
             if (editingForm) {
                 // Update existing form
-                const response = await axios.put(`/api/admin/forms/${editingForm.id}`, formData);
+                const response = await axios.put(`/admin/forms/${editingForm.id}`, formData);
                 if (response.data.success) {
                     setSuccess('Form updated successfully');
                     setIsEditDialogOpen(false);
@@ -366,7 +352,7 @@ export default function AdminForms() {
                 }
             } else {
                 // Create new form
-                const response = await axios.post('/api/admin/forms', formData);
+                const response = await axios.post('/admin/forms', formData);
                 if (response.data.success) {
                     setSuccess('Form created successfully');
                     setIsCreateDialogOpen(false);
@@ -388,7 +374,7 @@ export default function AdminForms() {
             setDeleting(true);
             setError(null);
 
-            const response = await axios.delete(`/api/admin/forms/${formToDelete?.id}`);
+            const response = await axios.delete(`/admin/forms/${formToDelete?.id}`);
             if (response.data.success) {
                 setSuccess('Form deleted successfully');
                 setIsDeleteDialogOpen(false);
@@ -455,7 +441,7 @@ export default function AdminForms() {
                             variant="outline" 
                             onClick={async () => {
                                 try {
-                                    const response = await axios.post('/api/admin/forms/sync');
+                                    const response = await axios.post('/admin/forms/sync');
                                     if (response.data.success) {
                                         setSuccess('Forms synced successfully from leaders folder');
                                         fetchForms();
@@ -483,7 +469,7 @@ export default function AdminForms() {
                             className="flex items-center gap-2"
                         >
                             <FileText className="h-4 w-4" />
-                            {showAvailableForms ? 'Hide' : 'View'} Forms in Folder
+                            {showAvailableForms ? 'Hide' : 'Show'} Forms in Folder
                         </Button>
                         <Button 
                             variant="outline" 
@@ -547,7 +533,7 @@ export default function AdminForms() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">
-                                        {availableForms.total_available || 0}
+                                        {availableForms.length}
                                     </div>
                                     <p className="text-xs text-muted-foreground">
                                         In leaders folder
