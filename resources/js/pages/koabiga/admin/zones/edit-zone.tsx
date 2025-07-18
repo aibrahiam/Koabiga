@@ -123,42 +123,40 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
     };
 
     return (
-        <>
+        <div className="min-h-screen flex flex-col">
             <Head title={`Edit ${zone.name} - Koabiga Admin`} />
-            
-            <div className="min-h-screen flex flex-col">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b">
-                    <div className="flex items-center space-x-4">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.visit(`/koabiga/admin/zones/${zone.id}`)}
-                        >
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Back to Zone
-                        </Button>
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Edit Zone</h1>
-                            <p className="text-gray-600 dark:text-gray-400 mt-1">
-                                Update zone information and settings
-                            </p>
-                        </div>
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b">
+                <div className="flex items-center space-x-4">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.visit(`/koabiga/admin/zones/${zone.id}`)}
+                    >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back to Zone
+                    </Button>
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Edit Zone</h1>
+                        <p className="text-gray-600 dark:text-gray-400 mt-1">
+                            Update zone information and settings
+                        </p>
                     </div>
                 </div>
+            </div>
 
-                {/* Centered Form Container */}
-                <div className="flex-1 flex items-center justify-center p-6">
-                    <div className="w-full max-w-2xl">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center space-x-2">
-                                    <MapPin className="w-5 h-5 text-emerald-600" />
-                                    <span>Zone Information</span>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Centered Form Container */}
+            <div className="flex-1 flex items-center justify-center p-6">
+                <div className="w-full max-w-2xl">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                                <MapPin className="w-5 h-5 text-emerald-600" />
+                                <span>Zone Information</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleSubmit} className="space-y-6">
                                 {/* Basic Information */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
@@ -177,7 +175,6 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                             </p>
                                         )}
                                     </div>
-
                                     <div className="space-y-2">
                                         <Label htmlFor="code">Zone Code *</Label>
                                         <Input
@@ -195,7 +192,6 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                         )}
                                     </div>
                                 </div>
-
                                 {/* Location */}
                                 <div className="space-y-2">
                                     <Label htmlFor="location">Location</Label>
@@ -213,7 +209,6 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                         </p>
                                     )}
                                 </div>
-
                                 {/* Description */}
                                 <div className="space-y-2">
                                     <Label htmlFor="description">Description</Label>
@@ -235,7 +230,6 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                         {formData.description.length}/500 characters
                                     </p>
                                 </div>
-
                                 {/* Leader Assignment */}
                                 <div className="space-y-2">
                                     <Label htmlFor="leader">Zone Leader</Label>
@@ -281,7 +275,6 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                         </p>
                                     )}
                                 </div>
-
                                 {/* Status */}
                                 <div className="space-y-2">
                                     <Label htmlFor="status">Status</Label>
@@ -311,7 +304,6 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                         Active zones can be assigned units and members
                                     </p>
                                 </div>
-
                                 {/* Form Actions */}
                                 <div className="flex items-center justify-end space-x-4 pt-6 border-t">
                                     <Button
@@ -345,6 +337,6 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                     </Card>
                 </div>
             </div>
-        </>
+        </div>
     );
 } 

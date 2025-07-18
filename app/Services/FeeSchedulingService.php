@@ -6,7 +6,7 @@ use App\Models\FeeRule;
 use App\Models\FeeApplication;
 use App\Models\User;
 use App\Models\Unit;
-use App\Models\FeeRuleUnit;
+use App\Models\FeeRuleUnitAssignment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -296,7 +296,7 @@ class FeeSchedulingService
                 try {
                     $customAmount = $customAmounts[$unitId] ?? null;
 
-                    FeeRuleUnit::updateOrCreate(
+                    FeeRuleUnitAssignment::updateOrCreate(
                         [
                             'fee_rule_id' => $feeRule->id,
                             'unit_id' => $unitId,
@@ -370,7 +370,7 @@ class FeeSchedulingService
             
             case 'specific_units':
                 // Get users from units that have this fee rule assigned
-                $unitIds = FeeRuleUnit::where('fee_rule_id', $feeRule->id)
+                $unitIds = FeeRuleUnitAssignment::where('fee_rule_id', $feeRule->id)
                     ->where('is_active', true)
                     ->pluck('unit_id');
                 
@@ -431,7 +431,7 @@ class FeeSchedulingService
      */
     private function getUnitOverride(FeeRule $feeRule, Unit $unit): ?float
     {
-        $unitOverride = FeeRuleUnit::where('fee_rule_id', $feeRule->id)
+        $unitOverride = FeeRuleUnitAssignment::where('fee_rule_id', $feeRule->id)
             ->where('unit_id', $unit->id)
             ->where('is_active', true)
             ->first();

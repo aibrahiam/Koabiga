@@ -73,9 +73,7 @@ export default function CreateUnit({ availableLeaders = [], zones = [] }: Create
     const generateUnitCode = async (zoneId: string) => {
         setIsGeneratingCode(true);
         try {
-            console.log('Generating code for zone ID:', zoneId);
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            console.log('CSRF Token present:', !!csrfToken);
             
             const response = await fetch('/koabiga/admin/units/generate-code', {
                 method: 'POST',
@@ -87,11 +85,7 @@ export default function CreateUnit({ availableLeaders = [], zones = [] }: Create
                 body: JSON.stringify({ zone_id: zoneId })
             });
             
-            console.log('Response status:', response.status);
-            console.log('Response ok:', response.ok);
-            
             const data = await response.json();
-            console.log('Response data:', data);
             
             if (data.success) {
                 setFormData(prev => ({ ...prev, code: data.code }));
@@ -197,9 +191,9 @@ export default function CreateUnit({ availableLeaders = [], zones = [] }: Create
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={handleSubmit} className="space-y-6">
+                            <form onSubmit={handleSubmit} className="space-y-4">
                                 {/* Basic Information */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="name">Unit Name *</Label>
                                         <Input
@@ -239,9 +233,6 @@ export default function CreateUnit({ availableLeaders = [], zones = [] }: Create
                                                 {errors.code}
                                             </p>
                                         )}
-                                        <p className="text-xs text-gray-500">
-                                            Code is automatically generated based on the selected zone (e.g., EZ01, EZ02)
-                                        </p>
                                     </div>
                                 </div>
 

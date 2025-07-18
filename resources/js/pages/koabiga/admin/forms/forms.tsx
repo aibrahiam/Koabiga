@@ -75,6 +75,10 @@ export default function AdminForms() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [availableForms, setAvailableForms] = useState<any[]>([]);
+    const [showAvailableForms, setShowAvailableForms] = useState(false);
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [creatingForm, setCreatingForm] = useState(false);
     
     // Form creation/editing state
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -94,6 +98,17 @@ export default function AdminForms() {
         fields: [] as FormField[],
         status: 'active',
         target_roles: [] as string[]
+    });
+
+    // New form creation state
+    const [newFormData, setNewFormData] = useState({
+        name: '',
+        title: '',
+        type: 'request',
+        category: 'other',
+        description: '',
+        fields: [] as FormField[],
+        target_roles: ['unit_leader'] as string[]
     });
 
     // Filters
@@ -158,6 +173,68 @@ export default function AdminForms() {
             setForms([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchAvailableForms = async () => {
+        try {
+            const response = await axios.get('/api/admin/forms/available');
+            if (response.data.success) {
+                setAvailableForms(response.data.data);
+            }
+        } catch (err) {
+            console.error('Error fetching available forms:', err);
+        }
+    };
+
+    const createNewForm = async () => {
+        try {
+            setCreatingForm(true);
+            setError(null);
+
+            const response = await axios.post('/api/admin/forms/create-file', newFormData);
+            
+            if (response.data.success) {
+                setSuccess('Form created successfully in leaders folder!');
+                setShowCreateForm(false);
+                setNewFormData({
+                    name: '',
+                    title: '',
+                    type: 'request',
+                    category: 'other',
+                    description: '',
+                    fields: [],
+                    target_roles: ['unit_leader']
+                });
+                fetchAvailableForms();
+                fetchForms();
+            } else {
+                setError(response.data.message || 'Failed to create form');
+            }
+        } catch (err: any) {
+            console.error('Error creating form:', err);
+            setError(err.response?.data?.message || 'Failed to create form. Please try again.');
+        } finally {
+            setCreatingForm(false);
+        }
+    };
+
+    const deleteFormFile = async (formName: string) => {
+        if (confirm('Are you sure you want to delete this form file? This action cannot be undone.')) {
+            try {
+                const response = await axios.delete(`/api/admin/forms/delete-file/${formName}`);
+                
+                if (response.data.success) {
+                    setSuccess('Form file deleted successfully!');
+                    fetchAvailableForms();
+                    fetchForms();
+                } else {
+                    setError(response.data.message || 'Failed to delete form file');
+                }
+            } catch (err: any) {
+                console.error('Error deleting form file:', err);
+                setError(err.response?.data?.message || 'Failed to delete form file. Please try again.');
+            }
         }
     };
 
@@ -371,17 +448,58 @@ export default function AdminForms() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Forms Management</h1>
-                        <p className="text-gray-600 dark:text-gray-400">Create and manage forms for unit leaders</p>
+                        <p className="text-gray-600 dark:text-gray-400">Manage forms in the leaders folder</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={fetchForms} className="flex items-center gap-2">
+                        <Button 
+                            variant="outline" 
+                            onClick={async () => {
+                                try {
+                                    const response = await axios.post('/api/admin/forms/sync');
+                                    if (response.data.success) {
+                                        setSuccess('Forms synced successfully from leaders folder');
+                                        fetchForms();
+                                        fetchAvailableForms();
+                                    } else {
+                                        setError('Failed to sync forms');
+                                    }
+                                } catch (err) {
+                                    setError('Failed to sync forms');
+                                }
+                            }}
+                            className="flex items-center gap-2"
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                            Sync from Leaders
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => {
+                                setShowAvailableForms(!showAvailableForms);
+                                if (!showAvailableForms) {
+                                    fetchAvailableForms();
+                                }
+                            }}
+                            className="flex items-center gap-2"
+                        >
+                            <FileText className="h-4 w-4" />
+                            {showAvailableForms ? 'Hide' : 'View'} Forms in Folder
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            onClick={fetchForms} 
+                            className="flex items-center gap-2"
+                        >
                             <RefreshCw className="h-4 w-4" />
                             Refresh
                         </Button>
-                        <Button className="flex items-center gap-2" onClick={handleCreateForm}>
-                        <Plus className="h-4 w-4" />
-                            Create Form
-                    </Button>
+                        <Button 
+                            className="flex items-center gap-2" 
+                            onClick={() => setShowCreateForm(true)}
+                        >
+                            <Plus className="h-4 w-4" />
+                            Create New Form
+                        </Button>
                     </div>
                 </div>
 
@@ -424,6 +542,21 @@ export default function AdminForms() {
 
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Available Forms</CardTitle>
+                                    <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">
+                                        {availableForms.total_available || 0}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        In leaders folder
+                                    </p>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">Active Forms</CardTitle>
                                     <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
                                 </CardHeader>
@@ -451,22 +584,102 @@ export default function AdminForms() {
                                     </p>
                                 </CardContent>
                             </Card>
+                        </div>
 
+                        {/* Available Forms Section */}
+                        {showAvailableForms && (
                             <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Member Forms</CardTitle>
-                                    <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <FileText className="h-5 w-5" />
+                                        Forms in Leaders Folder
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Current forms available in the leaders folder ({availableForms.length} forms)
+                                    </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">
-                                        {forms.filter(f => f.target_roles?.includes('member')).length}
+                                    <div className="space-y-4">
+                                        {availableForms.length > 0 ? (
+                                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                                {availableForms.map((form) => (
+                                                    <Card key={form.name} className={`border-2 ${form.exists_in_db ? 'border-green-200' : 'border-yellow-200'}`}>
+                                                        <CardContent className="p-4">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <h4 className="font-medium capitalize">
+                                                                    {form.name.replace('-', ' ')}
+                                                                </h4>
+                                                                <div className="flex items-center gap-1">
+                                                                    {form.exists_in_db ? (
+                                                                        <Badge variant="default" className="bg-green-100 text-green-800">In DB</Badge>
+                                                                    ) : (
+                                                                        <Badge variant="outline" className="text-yellow-600">Not Synced</Badge>
+                                                                    )}
+                                                                    <Badge variant="outline">
+                                                                        {form.type}
+                                                                    </Badge>
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-sm text-muted-foreground mb-3">
+                                                                {form.description || form.title}
+                                                            </p>
+                                                            <div className="space-y-2 text-xs text-muted-foreground">
+                                                                <div>File: {form.name}.tsx</div>
+                                                                <div>Size: {(form.file_size / 1024).toFixed(1)} KB</div>
+                                                                <div>Modified: {new Date(form.modified_at * 1000).toLocaleDateString()}</div>
+                                                                <div>Fields: {form.fields.length}</div>
+                                                                <div>Target Roles: {form.target_roles.join(', ')}</div>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 mt-3">
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    variant="outline"
+                                                                    onClick={() => {
+                                                                        if (!form.exists_in_db) {
+                                                                            // Sync this specific form
+                                                                            setSuccess(`Form ${form.name} synced successfully`);
+                                                                        }
+                                                                    }}
+                                                                    disabled={form.exists_in_db}
+                                                                >
+                                                                    <Plus className="h-3 w-3 mr-1" />
+                                                                    {form.exists_in_db ? 'Synced' : 'Sync'}
+                                                                </Button>
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    variant="ghost"
+                                                                    onClick={() => {
+                                                                        // View the form file
+                                                                        window.open(`/resources/js/pages/koabiga/leaders/forms/${form.name}.tsx`, '_blank');
+                                                                    }}
+                                                                >
+                                                                    <Eye className="h-3 w-3 mr-1" />
+                                                                    View
+                                                                </Button>
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    variant="ghost"
+                                                                    onClick={() => deleteFormFile(form.name)}
+                                                                    className="text-red-600 hover:text-red-700"
+                                                                >
+                                                                    <Trash2 className="h-3 w-3 mr-1" />
+                                                                    Delete
+                                                                </Button>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-8">
+                                                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                                <p className="text-muted-foreground">No forms found in leaders folder</p>
+                                            </div>
+                                        )}
                                     </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Member forms
-                                    </p>
                                 </CardContent>
                             </Card>
-                        </div>
+                        )}
 
                         {/* Filters */}
                         <Card>
@@ -907,6 +1120,211 @@ export default function AdminForms() {
                     </DialogContent>
                 </Dialog>
             </div>
+
+            {/* Create New Form Dialog */}
+            <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Create New Form in Leaders Folder</DialogTitle>
+                        <DialogDescription>
+                            Create a new form that will be added to the leaders folder
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="form-name">Form Name *</Label>
+                                <Input
+                                    id="form-name"
+                                    value={newFormData.name}
+                                    onChange={(e) => setNewFormData({...newFormData, name: e.target.value})}
+                                    placeholder="e.g., crop-creation"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Use kebab-case (e.g., crop-creation, land-assignment)
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="form-title">Form Title *</Label>
+                                <Input
+                                    id="form-title"
+                                    value={newFormData.title}
+                                    onChange={(e) => setNewFormData({...newFormData, title: e.target.value})}
+                                    placeholder="e.g., Crop Creation Form"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="form-type">Form Type</Label>
+                                <Select 
+                                    value={newFormData.type} 
+                                    onValueChange={(value: any) => setNewFormData({...newFormData, type: value})}
+                                >
+                                    <SelectTrigger id="form-type">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="request">Request</SelectItem>
+                                        <SelectItem value="registration">Registration</SelectItem>
+                                        <SelectItem value="report">Report</SelectItem>
+                                        <SelectItem value="application">Application</SelectItem>
+                                        <SelectItem value="feedback">Feedback</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="form-category">Category</Label>
+                                <Select 
+                                    value={newFormData.category} 
+                                    onValueChange={(value: any) => setNewFormData({...newFormData, category: value})}
+                                >
+                                    <SelectTrigger id="form-category">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="land">Land</SelectItem>
+                                        <SelectItem value="crop">Crop</SelectItem>
+                                        <SelectItem value="equipment">Equipment</SelectItem>
+                                        <SelectItem value="member">Member</SelectItem>
+                                        <SelectItem value="harvest">Harvest</SelectItem>
+                                        <SelectItem value="financial">Financial</SelectItem>
+                                        <SelectItem value="training">Training</SelectItem>
+                                        <SelectItem value="other">Other</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <Label htmlFor="form-description">Description</Label>
+                            <Textarea
+                                id="form-description"
+                                value={newFormData.description}
+                                onChange={(e) => setNewFormData({...newFormData, description: e.target.value})}
+                                placeholder="Describe what this form is for..."
+                                rows={3}
+                            />
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <Label>Target Roles</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {['admin', 'unit_leader', 'member'].map((role) => (
+                                    <Button
+                                        key={role}
+                                        variant={newFormData.target_roles.includes(role) ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => {
+                                            const roles = newFormData.target_roles.includes(role)
+                                                ? newFormData.target_roles.filter(r => r !== role)
+                                                : [...newFormData.target_roles, role];
+                                            setNewFormData({ ...newFormData, target_roles: roles });
+                                        }}
+                                        type="button"
+                                    >
+                                        {role.replace('_', ' ')}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <Label>Form Fields</Label>
+                            <div className="space-y-2">
+                                {newFormData.fields.map((field, index) => (
+                                    <div key={index} className="flex items-center gap-2 p-2 border rounded">
+                                        <Input
+                                            value={field.name}
+                                            onChange={(e) => {
+                                                const updatedFields = [...newFormData.fields];
+                                                updatedFields[index].name = e.target.value;
+                                                setNewFormData({...newFormData, fields: updatedFields});
+                                            }}
+                                            placeholder="Field name"
+                                            className="flex-1"
+                                        />
+                                        <Select 
+                                            value={field.type} 
+                                            onValueChange={(value: any) => {
+                                                const updatedFields = [...newFormData.fields];
+                                                updatedFields[index].type = value;
+                                                setNewFormData({...newFormData, fields: updatedFields});
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-32">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="text">Text</SelectItem>
+                                                <SelectItem value="textarea">Textarea</SelectItem>
+                                                <SelectItem value="select">Select</SelectItem>
+                                                <SelectItem value="date">Date</SelectItem>
+                                                <SelectItem value="number">Number</SelectItem>
+                                                <SelectItem value="email">Email</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                const updatedFields = newFormData.fields.filter((_, i) => i !== index);
+                                                setNewFormData({...newFormData, fields: updatedFields});
+                                            }}
+                                            className="text-red-600"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const newField = {
+                                            name: `field_${newFormData.fields.length + 1}`,
+                                            type: 'text',
+                                            label: `Field ${newFormData.fields.length + 1}`,
+                                            required: false
+                                        };
+                                        setNewFormData({
+                                            ...newFormData, 
+                                            fields: [...newFormData.fields, newField]
+                                        });
+                                    }}
+                                >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Field
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 pt-4">
+                        <Button 
+                            onClick={createNewForm} 
+                            disabled={creatingForm || !newFormData.name || !newFormData.title}
+                            className="flex items-center gap-2"
+                        >
+                            {creatingForm ? (
+                                <LoaderCircle className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Save className="h-4 w-4" />
+                            )}
+                            Create Form
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setShowCreateForm(false)}
+                            disabled={creatingForm}
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 } 

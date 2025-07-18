@@ -178,6 +178,51 @@ Route::prefix('admin')->middleware(['web', 'auth:web', 'role:admin'])->group(fun
         Route::put('/{id}', [UnitController::class, 'update']);
         Route::delete('/{id}', [UnitController::class, 'destroy']);
     });
+
+    // Fee Rules Management
+    Route::prefix('fee-rules')->group(function () {
+        Route::get('/', [FeeRuleController::class, 'index']);
+        Route::post('/', [FeeRuleController::class, 'store']);
+        Route::get('/statistics', [FeeRuleController::class, 'statistics']);
+        Route::get('/{feeRule}', [FeeRuleController::class, 'show']);
+        Route::put('/{feeRule}', [FeeRuleController::class, 'update']);
+        Route::delete('/{feeRule}', [FeeRuleController::class, 'destroy']);
+        Route::post('/{feeRule}/apply', [FeeRuleController::class, 'applyFeeRule']);
+        Route::post('/{feeRule}/schedule', [FeeRuleController::class, 'scheduleFeeRule']);
+        Route::post('/{feeRule}/assign-units', [FeeRuleController::class, 'assignToUnits']);
+        Route::get('/{feeRule}/applications', [FeeRuleController::class, 'getFeeApplications']);
+        Route::get('/{feeRule}/unit-assignments', [FeeRuleController::class, 'getUnitAssignments']);
+        Route::get('/{feeRule}/statistics', [FeeRuleController::class, 'getFeeRuleStatistics']);
+    });
+
+    // Pages Management
+    Route::prefix('pages')->group(function () {
+        Route::get('/', [PageController::class, 'index']);
+        Route::post('/', [PageController::class, 'store']);
+        Route::get('/{page}', [PageController::class, 'show']);
+        Route::put('/{page}', [PageController::class, 'update']);
+        Route::delete('/{page}', [PageController::class, 'destroy']);
+        Route::get('/navigation/{role}/preview', [PageController::class, 'getNavigationPreview']);
+        Route::get('/statistics', [PageController::class, 'getStats']);
+    });
+
+    // Forms Management
+    Route::prefix('forms')->group(function () {
+        Route::get('/', [FormController::class, 'index']);
+        Route::post('/', [FormController::class, 'store']);
+        Route::get('/{form}', [FormController::class, 'show']);
+        Route::put('/{form}', [FormController::class, 'update']);
+        Route::delete('/{form}', [FormController::class, 'destroy']);
+        Route::get('/{form}/submissions', [FormController::class, 'getSubmissions']);
+        Route::get('/{form}/assigned-members', [FormController::class, 'getAssignedMembers']);
+        Route::post('/{form}/assign-members', [FormController::class, 'assignMembers']);
+        Route::delete('/{form}/unassign-members', [FormController::class, 'unassignMembers']);
+        Route::post('/sync', [FormController::class, 'syncForms']);
+        Route::get('/stats', [FormController::class, 'getStats']);
+        Route::get('/available', [FormController::class, 'getAvailableForms']);
+        Route::post('/create-file', [FormController::class, 'createFormFile']);
+        Route::delete('/delete-file/{formName}', [FormController::class, 'deleteFormFile']);
+    });
 });
 
 // Member API Routes

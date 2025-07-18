@@ -18,60 +18,78 @@ interface Unit {
     };
 }
 
-interface CreateFeeRuleProps {
+interface FeeRule {
+    id: number;
+    name: string;
+    type: string;
+    amount: string;
+    frequency: string;
+    unit: string;
+    status: string;
+    applicable_to: string;
+    description: string;
+    effective_date: string;
+    created_at: string;
+    updated_at: string;
+}
+
+interface EditFeeRuleProps {
+    feeRule: FeeRule;
     units: Unit[];
 }
 
-export default function CreateFeeRule({ units }: CreateFeeRuleProps) {
-    const { data, setData, post, processing, errors } = useForm({
-        name: '',
-        type: '',
-        amount: '',
-        frequency: '',
-        unit: '',
-        status: 'active',
-        applicable_to: '',
-        description: '',
-        effective_date: '',
+export default function EditFeeRule({ feeRule, units }: EditFeeRuleProps) {
+    const { data, setData, put, processing, errors } = useForm({
+        name: feeRule.name,
+        type: feeRule.type,
+        amount: feeRule.amount,
+        frequency: feeRule.frequency,
+        unit: feeRule.unit,
+        status: feeRule.status,
+        applicable_to: feeRule.applicable_to,
+        description: feeRule.description,
+        effective_date: feeRule.effective_date,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/koabiga/admin/fee-rules');
+        put(`/koabiga/admin/fee-rules/${feeRule.id}`);
     };
 
     return (
         <AppLayout breadcrumbs={[
             { title: 'Admin Dashboard', href: '/koabiga/admin/dashboard' },
             { title: 'Fee Rules', href: '/koabiga/admin/fee-rules' },
-            { title: 'Create Fee Rule', href: '/koabiga/admin/fee-rules/create' },
+            { title: 'Edit Fee Rule', href: `/koabiga/admin/fee-rules/${feeRule.id}/edit` },
         ]}>
-            <Head title="Create Fee Rule - Koabiga Admin" />
+            <Head title="Edit Fee Rule - Koabiga Admin" />
             
-            <div className="flex h-full flex-1 flex-col gap-6 p-6 items-center">
+            <div className="flex h-full flex-1 flex-col gap-4 p-6 items-center">
                 {/* Header */}
                 <div className="w-full max-w-2xl">
-                    <div className="flex items-center mb-4">
-                        <Link href="/koabiga/admin/fee-rules">
-                            <Button variant="outline" size="sm">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back to Fee Rules
-                            </Button>
-                        </Link>
-                    </div>
                     <div className="text-center">
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Create Fee Rule</h1>
-                        <p className="text-gray-600 dark:text-gray-400">Configure a new platform fee structure</p>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Edit Fee Rule</h1>
+                        <p className="text-gray-600 dark:text-gray-400">Update fee rule configuration</p>
                     </div>
                 </div>
 
-                {/* Create Form */}
+                {/* Back Button */}
+                <div className="w-full max-w-2xl">
+                    <Link href="/koabiga/admin/fee-rules">
+                        <Button variant="outline" size="sm">
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Back
+                        </Button>
+                    </Link>
+                </div>
+
+                {/* Edit Form */}
                 <Card className="w-full max-w-2xl">
                     <CardHeader>
                         <CardTitle>Fee Rule Information</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="space-y-3">
                             <div>
                                 <label htmlFor="name" className="block mb-1 font-medium">Fee Rule Name</label>
                                 <Input
@@ -109,10 +127,10 @@ export default function CreateFeeRule({ units }: CreateFeeRuleProps) {
                                     id="amount"
                                     name="amount"
                                     type="number"
-                                    step="0.01"
+                                    step="1"
                                     value={data.amount}
                                     onChange={e => setData('amount', e.target.value)}
-                                    placeholder="1,000 RWF"
+                                    placeholder="1000 RWF"
                                     required
                                 />
                                 {errors.amount && <div className="text-red-600 text-sm mt-1">{errors.amount}</div>}
@@ -216,7 +234,7 @@ export default function CreateFeeRule({ units }: CreateFeeRuleProps) {
                                 <Link href="/koabiga/admin/fee-rules">
                                     <Button type="button" variant="outline">Cancel</Button>
                                 </Link>
-                                <Button type="submit" disabled={processing}>Create Fee Rule</Button>
+                                <Button type="submit" disabled={processing}>Update Fee Rule</Button>
                             </div>
                         </form>
                     </CardContent>

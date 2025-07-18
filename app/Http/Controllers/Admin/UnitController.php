@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Unit;
 use App\Models\Zone;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -80,6 +81,9 @@ class UnitController extends Controller
             'status' => $request->status,
         ]);
 
+        // Log the unit creation
+        ActivityLogService::logUnitCreation($unit);
+
         return redirect()->route('koabiga.admin.units.index')
             ->with('success', 'Unit created successfully.');
     }
@@ -144,6 +148,9 @@ class UnitController extends Controller
             'status' => $request->status,
         ]);
 
+        // Log the unit update
+        ActivityLogService::logUnitUpdate($unit);
+
         return redirect()->route('koabiga.admin.units.index')
             ->with('success', 'Unit updated successfully.');
     }
@@ -158,7 +165,13 @@ class UnitController extends Controller
             return back()->with('error', 'Cannot delete unit that has members. Please reassign or remove members first.');
         }
 
+        $unitName = $unit->name;
+        $unitId = $unit->id;
+        
         $unit->delete();
+
+        // Log the unit deletion
+        ActivityLogService::logUnitDeletion($unitName, $unitId);
 
         return redirect()->route('koabiga.admin.units.index')
             ->with('success', 'Unit deleted successfully.');

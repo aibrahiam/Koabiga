@@ -56,7 +56,7 @@ class PageController extends Controller
                     'path' => $page->path,
                     'role' => $page->role,
                     'status' => $page->status,
-                    'lastModified' => $page->last_modified,
+                    'lastModified' => $page->lastModified,
                     'description' => $page->description,
                     'features' => $page->features ?? [],
                     'createdBy' => $page->created_by_name,
@@ -127,7 +127,7 @@ class PageController extends Controller
                     'path' => $page->path,
                     'role' => $page->role,
                     'status' => $page->status,
-                    'lastModified' => $page->last_modified,
+                    'lastModified' => $page->lastModified,
                     'description' => $page->description,
                     'features' => $page->features ?? [],
                     'createdBy' => $page->created_by_name,
@@ -164,7 +164,7 @@ class PageController extends Controller
                     'path' => $page->path,
                     'role' => $page->role,
                     'status' => $page->status,
-                    'lastModified' => $page->last_modified,
+                    'lastModified' => $page->lastModified,
                     'description' => $page->description,
                     'features' => $page->features ?? [],
                     'createdBy' => $page->created_by_name,
@@ -233,7 +233,7 @@ class PageController extends Controller
                     'path' => $page->path,
                     'role' => $page->role,
                     'status' => $page->status,
-                    'lastModified' => $page->last_modified,
+                    'lastModified' => $page->lastModified,
                     'description' => $page->description,
                     'features' => $page->features ?? [],
                     'createdBy' => $page->created_by_name,
@@ -272,6 +272,62 @@ class PageController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete page: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get pages by role
+     */
+    public function getByRole($role): JsonResponse
+    {
+        try {
+            $pages = Page::byRole($role)
+                ->active()
+                ->orderBy('sort_order', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $pages
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch pages: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get navigation items for a specific role
+     */
+    public function getNavigationForRole($role): JsonResponse
+    {
+        try {
+            $pages = Page::byRole($role)
+                ->active()
+                ->orderBy('sort_order', 'asc')
+                ->get();
+
+            $navigationItems = $pages->map(function ($page) {
+                return [
+                    'title' => $page->title,
+                    'href' => $page->path,
+                    'icon' => $page->icon,
+                    'description' => $page->description,
+                    'features' => $page->features ?? [],
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $navigationItems
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch navigation: ' . $e->getMessage()
             ], 500);
         }
     }

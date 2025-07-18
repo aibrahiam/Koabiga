@@ -22,7 +22,8 @@ import {
     MapPin,
     Shield,
     Activity,
-    RefreshCw
+    RefreshCw,
+    ArrowLeft
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from '@/lib/axios';
@@ -82,10 +83,24 @@ interface Page {
     features?: string[];
 }
 
-export default function AdminPageManagement() {
+interface PageManagementProps {
+    pages: Page[];
+    users: User[];
+    units: any[];
+    zones: any[];
+    pageStats: {
+        admin: any;
+        unit_leader: any;
+        member: any;
+        overall: any;
+    };
+}
+
+export default function AdminPageManagement({ pages: initialPages, users: initialUsers, units, zones, pageStats }: PageManagementProps) {
     // Page Management State
-    const [pages, setPages] = useState<Page[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [pages, setPages] = useState<Page[]>(initialPages);
+    const [users, setUsers] = useState<User[]>(initialUsers);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [editingPage, setEditingPage] = useState<Page | null>(null);
@@ -96,227 +111,70 @@ export default function AdminPageManagement() {
     const [deleting, setDeleting] = useState(false);
 
     // User Management State
-    const [users, setUsers] = useState<User[]>([]);
     const [usersLoading, setUsersLoading] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [isUserEditDialogOpen, setIsUserEditDialogOpen] = useState(false);
     const [savingUser, setSavingUser] = useState(false);
-    const [units, setUnits] = useState<any[]>([]);
-    const [zones, setZones] = useState<any[]>([]);
 
     // Filters and search
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalItems, setTotalItems] = useState(0);
 
     // User filters
     const [userSearchTerm, setUserSearchTerm] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState('all');
     const [userStatusFilter, setUserStatusFilter] = useState('all');
-    const [userCurrentPage, setUserCurrentPage] = useState(1);
-    const [userTotalPages, setUserTotalPages] = useState(1);
-    const [userTotalItems, setUserTotalItems] = useState(0);
 
     // Real-time updates
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
-    // Fetch pages
-    const fetchPages = async (page = 1) => {
+    // Filter pages based on search and filters
+    const filteredPages = pages.filter(page => {
+        const matchesSearch = !searchTerm || 
+            page.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            page.path.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            page.description.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesRole = roleFilter === 'all' || page.role === roleFilter;
+        const matchesStatus = statusFilter === 'all' || page.status === statusFilter;
+        
+        return matchesSearch && matchesRole && matchesStatus;
+    });
+
+    // Filter users based on search and filters
+    const filteredUsers = users.filter(user => {
+        const matchesSearch = !userSearchTerm || 
+            user.christian_name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+            user.family_name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+            user.phone.includes(userSearchTerm) ||
+            (user.id_passport && user.id_passport.includes(userSearchTerm));
+        
+        const matchesRole = userRoleFilter === 'all' || user.role === userRoleFilter;
+        const matchesStatus = userStatusFilter === 'all' || user.status === userStatusFilter;
+        
+        return matchesSearch && matchesRole && matchesStatus;
+    });
+
+    // Real-time data sync
+    const syncData = async () => {
         try {
             setLoading(true);
-            setError(null);
-            
-            console.log('Fetching pages with params:', {
-                page,
-                searchTerm,
-                roleFilter,
-                statusFilter
-            });
-            
-            const params = new URLSearchParams({
-                page: page.toString(),
-                per_page: '15',
-                search: searchTerm,
-                role: roleFilter,
-                status: statusFilter,
-                sort_by: 'sort_order',
-                sort_order: 'asc'
-            });
-            
-            console.log('Making API call to:', `/api/admin/pages?${params}`);
-            
-            const response = await axios.get(`/api/admin/pages?${params}`);
-            
-            console.log('Pages API response:', response.data);
-            
-            if (response.data.success) {
-                setPages(response.data.data.data || []);
-                setCurrentPage(response.data.data.current_page);
-                setTotalPages(response.data.data.last_page);
-                setTotalItems(response.data.data.total);
-                console.log('Pages loaded successfully:', response.data.data.data?.length || 0, 'pages');
-            } else {
-                console.error('API returned error:', response.data.message);
-                setError(response.data.message || 'Failed to fetch pages');
-            }
+            // Refresh the page to get updated data
+            router.reload();
+            setLastUpdate(new Date());
         } catch (err: any) {
-            console.error('Error fetching pages:', err);
-            console.error('Error response:', err.response?.data);
-            console.error('Error status:', err.response?.status);
-            
-            if (err.response?.status === 401) {
-                setError('Authentication required. Please log in again.');
-            } else if (err.response?.status === 403) {
-                setError('Access denied. You do not have permission to view pages.');
-            } else if (err.response?.status === 500) {
-                setError('Server error. Please try again later.');
-            } else {
-                setError('Failed to load pages. Please try again.');
-            }
-            setPages([]);
+            console.error('Error syncing data:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    // Fetch users
-    const fetchUsers = async (page = 1) => {
-        try {
-            setUsersLoading(true);
-            
-            console.log('Fetching users with params:', {
-                page,
-                userSearchTerm,
-                userRoleFilter,
-                userStatusFilter
-            });
-            
-            const params = new URLSearchParams({
-                page: page.toString(),
-                per_page: '15',
-                search: userSearchTerm,
-                role: userRoleFilter,
-                status: userStatusFilter,
-                sort_by: 'name',
-                sort_order: 'asc'
-            });
-            
-            console.log('Making API call to:', `/api/admin/members?${params}`);
-            
-            const response = await axios.get(`/api/admin/members?${params}`);
-            
-            console.log('Users API response:', response.data);
-            
-            if (response.data.success) {
-                setUsers(response.data.data.data || []);
-                setUserCurrentPage(response.data.data.current_page);
-                setUserTotalPages(response.data.data.last_page);
-                setUserTotalItems(response.data.data.total);
-                console.log('Users loaded successfully:', response.data.data.data?.length || 0, 'users');
-            } else {
-                console.error('API returned error:', response.data.message);
-                setError(response.data.message || 'Failed to fetch users');
-            }
-        } catch (err: any) {
-            console.error('Error fetching users:', err);
-            console.error('Error response:', err.response?.data);
-            console.error('Error status:', err.response?.status);
-            
-            if (err.response?.status === 401) {
-                setError('Authentication required. Please log in again.');
-            } else if (err.response?.status === 403) {
-                setError('Access denied. You do not have permission to view users.');
-            } else if (err.response?.status === 500) {
-                setError('Server error. Please try again later.');
-            } else {
-                setError('Failed to load users. Please try again.');
-            }
-            setUsers([]);
-        } finally {
-            setUsersLoading(false);
-        }
-    };
-
-    // Fetch units and zones for user editing
-    const fetchUnitsAndZones = async () => {
-        try {
-            console.log('Fetching units and zones...');
-            
-            const [unitsResponse, zonesResponse] = await Promise.all([
-                axios.get('/api/admin/units'),
-                axios.get('/api/admin/zones')
-            ]);
-            
-            console.log('Units response:', unitsResponse.data);
-            console.log('Zones response:', zonesResponse.data);
-            
-            if (unitsResponse.data.success) {
-                setUnits(unitsResponse.data.data || []);
-                console.log('Units loaded:', unitsResponse.data.data?.length || 0);
-            }
-            
-            if (zonesResponse.data.success) {
-                setZones(zonesResponse.data.data || []);
-                console.log('Zones loaded:', zonesResponse.data.data?.length || 0);
-            }
-        } catch (err: any) {
-            console.error('Error fetching units and zones:', err);
-            console.error('Error response:', err.response?.data);
-            console.error('Error status:', err.response?.status);
-        }
-    };
-
-    // Real-time data sync
-    const syncData = async () => {
-        await Promise.all([fetchPages(currentPage), fetchUsers(userCurrentPage)]);
-        setLastUpdate(new Date());
-    };
-
-    useEffect(() => {
-        // Test authentication first
-        const testAuth = async () => {
-            try {
-                console.log('Testing authentication...');
-                const authResponse = await axios.get('/api/debug-admin');
-                console.log('Auth test response:', authResponse.data);
-            } catch (err: any) {
-                console.error('Auth test failed:', err.response?.data);
-                console.error('Auth test status:', err.response?.status);
-            }
-        };
-        
-        testAuth();
-        fetchPages();
-        fetchUsers();
-        fetchUnitsAndZones();
-    }, []);
-
-    useEffect(() => {
-        // Debounce search
-        const timeoutId = setTimeout(() => {
-            fetchPages(1);
-        }, 500);
-
-        return () => clearTimeout(timeoutId);
-    }, [searchTerm, roleFilter, statusFilter]);
-
-    useEffect(() => {
-        // Debounce user search
-        const timeoutId = setTimeout(() => {
-            fetchUsers(1);
-        }, 500);
-
-        return () => clearTimeout(timeoutId);
-    }, [userSearchTerm, userRoleFilter, userStatusFilter]);
-
     // Auto-refresh every 30 seconds for real-time updates
     useEffect(() => {
         const interval = setInterval(syncData, 30000);
         return () => clearInterval(interval);
-    }, [currentPage, userCurrentPage]);
+    }, []);
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -386,30 +244,36 @@ export default function AdminPageManagement() {
 
             if (editingPage?.id) {
                 // Update existing page
-                const response = await axios.put(`/api/admin/pages/${editingPage.id}`, editingPage);
-                if (response.data.success) {
-                    setSuccess('Page updated successfully');
-                    setIsCreateDialogOpen(false);
-                    setEditingPage(null);
-                    fetchPages(currentPage);
-                } else {
-                    setError(response.data.message || 'Failed to update page');
-                }
+                await router.put(`/koabiga/admin/pages/${editingPage.id}`, editingPage, {
+                    onSuccess: () => {
+                        setSuccess('Page updated successfully');
+                        setIsCreateDialogOpen(false);
+                        setEditingPage(null);
+                        router.reload();
+                    },
+                    onError: (errors) => {
+                        setError('Failed to update page');
+                        console.error('Validation errors:', errors);
+                    }
+                });
             } else {
                 // Create new page
-                const response = await axios.post('/api/admin/pages', editingPage);
-                if (response.data.success) {
-                    setSuccess('Page created successfully');
-                    setIsCreateDialogOpen(false);
-                    setEditingPage(null);
-                    fetchPages(1);
-                } else {
-                    setError(response.data.message || 'Failed to create page');
-                }
+                await router.post('/koabiga/admin/pages', editingPage, {
+                    onSuccess: () => {
+                        setSuccess('Page created successfully');
+                        setIsCreateDialogOpen(false);
+                        setEditingPage(null);
+                        router.reload();
+                    },
+                    onError: (errors) => {
+                        setError('Failed to create page');
+                        console.error('Validation errors:', errors);
+                    }
+                });
             }
         } catch (err: any) {
             console.error('Error saving page:', err);
-            setError(err.response?.data?.message || 'Failed to save page. Please try again.');
+            setError('Failed to save page. Please try again.');
         } finally {
             setSaving(false);
         }
@@ -420,18 +284,21 @@ export default function AdminPageManagement() {
             setDeleting(true);
             setError(null);
 
-            const response = await axios.delete(`/api/admin/pages/${pageToDelete?.id}`);
-            if (response.data.success) {
-                setSuccess('Page deleted successfully');
-                setIsDeleteDialogOpen(false);
-                setPageToDelete(null);
-                fetchPages(currentPage);
-            } else {
-                setError(response.data.message || 'Failed to delete page');
-            }
+            await router.delete(`/koabiga/admin/pages/${pageToDelete?.id}`, {
+                onSuccess: () => {
+                    setSuccess('Page deleted successfully');
+                    setIsDeleteDialogOpen(false);
+                    setPageToDelete(null);
+                    router.reload();
+                },
+                onError: (errors) => {
+                    setError('Failed to delete page');
+                    console.error('Validation errors:', errors);
+                }
+            });
         } catch (err: any) {
             console.error('Error deleting page:', err);
-            setError(err.response?.data?.message || 'Failed to delete page. Please try again.');
+            setError('Failed to delete page. Please try again.');
         } finally {
             setDeleting(false);
         }
@@ -449,19 +316,22 @@ export default function AdminPageManagement() {
             setError(null);
 
             if (editingUser) {
-                const response = await axios.put(`/api/admin/members/${editingUser.id}`, editingUser);
-                if (response.data.success) {
-                    setSuccess('User updated successfully');
-                    setIsUserEditDialogOpen(false);
-                    setEditingUser(null);
-                    fetchUsers(userCurrentPage);
-                } else {
-                    setError(response.data.message || 'Failed to update user');
-                }
+                await router.put(`/koabiga/admin/members/${editingUser.id}`, editingUser, {
+                    onSuccess: () => {
+                        setSuccess('User updated successfully');
+                        setIsUserEditDialogOpen(false);
+                        setEditingUser(null);
+                        router.reload();
+                    },
+                    onError: (errors) => {
+                        setError('Failed to update user');
+                        console.error('Validation errors:', errors);
+                    }
+                });
             }
         } catch (err: any) {
             console.error('Error saving user:', err);
-            setError(err.response?.data?.message || 'Failed to save user. Please try again.');
+            setError('Failed to save user. Please try again.');
         } finally {
             setSavingUser(false);
         }
@@ -494,18 +364,41 @@ export default function AdminPageManagement() {
                     </div>
                 </div>
 
+                {/* Success/Error Messages */}
+                {success && (
+                    <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
+                        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <AlertDescription className="text-green-800 dark:text-green-200">
+                            {success}
+                        </AlertDescription>
+                        <Button variant="ghost" size="sm" onClick={clearMessages} className="ml-auto">
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </Alert>
+                )}
 
+                {error && (
+                    <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
+                        <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <AlertDescription className="text-red-800 dark:text-red-200">
+                            {error}
+                        </AlertDescription>
+                        <Button variant="ghost" size="sm" onClick={clearMessages} className="ml-auto">
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </Alert>
+                )}
 
                 {/* Tabs */}
                 <Tabs defaultValue="pages" className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="pages" className="flex items-center gap-2">
                             <FileText className="h-4 w-4" />
-                            Pages ({totalItems})
+                            Pages ({filteredPages.length})
                         </TabsTrigger>
                         <TabsTrigger value="users" className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
-                            Users ({userTotalItems})
+                            Users ({filteredUsers.length})
                         </TabsTrigger>
                     </TabsList>
 
@@ -519,7 +412,7 @@ export default function AdminPageManagement() {
                                     <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{totalItems}</div>
+                                    <div className="text-2xl font-bold">{pageStats.overall.total}</div>
                                     <p className="text-xs text-muted-foreground">
                                         Managed pages
                                     </p>
@@ -532,9 +425,7 @@ export default function AdminPageManagement() {
                                     <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">
-                                        {pages.filter(p => p.status === 'active').length}
-                                    </div>
+                                    <div className="text-2xl font-bold">{pageStats.overall.active}</div>
                                     <p className="text-xs text-muted-foreground">
                                         Currently active
                                     </p>
@@ -547,9 +438,7 @@ export default function AdminPageManagement() {
                                     <Building2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">
-                                        {pages.filter(p => p.role === 'unit_leader').length}
-                                    </div>
+                                    <div className="text-2xl font-bold">{pageStats.unit_leader.total}</div>
                                     <p className="text-xs text-muted-foreground">
                                         Unit leader pages
                                     </p>
@@ -562,9 +451,7 @@ export default function AdminPageManagement() {
                                     <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">
-                                        {pages.filter(p => p.role === 'member').length}
-                                    </div>
+                                    <div className="text-2xl font-bold">{pageStats.member.total}</div>
                                     <p className="text-xs text-muted-foreground">
                                         Member pages
                                     </p>
@@ -642,7 +529,7 @@ export default function AdminPageManagement() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {pages.map((page) => (
+                                                {filteredPages.map((page) => (
                                                     <tr key={page.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
                                                         <td className="p-4">
                                                             <div>
@@ -674,6 +561,13 @@ export default function AdminPageManagement() {
                                                                 </Button>
                                                                 <Button 
                                                                     variant="ghost" 
+                                                                    size="sm"
+                                                                    onClick={() => router.visit(page.path)}
+                                                                >
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button 
+                                                                    variant="ghost" 
                                                                     size="sm" 
                                                                     className="text-red-600 hover:text-red-700"
                                                                     onClick={() => handleDeletePage(page)}
@@ -687,33 +581,11 @@ export default function AdminPageManagement() {
                                             </tbody>
                                         </table>
                                         
-                                        {/* Pagination */}
-                                        {totalPages > 1 && (
-                                            <div className="flex items-center justify-between mt-4">
-                                                <div className="text-sm text-muted-foreground">
-                                                    Showing {((currentPage - 1) * 15) + 1} to {Math.min(currentPage * 15, totalItems)} of {totalItems} results
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        disabled={currentPage === 1}
-                                                        onClick={() => fetchPages(currentPage - 1)}
-                                                    >
-                                                        Previous
-                                                    </Button>
-                                                    <span className="text-sm">
-                                                        Page {currentPage} of {totalPages}
-                                                    </span>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        disabled={currentPage === totalPages}
-                                                        onClick={() => fetchPages(currentPage + 1)}
-                                                    >
-                                                        Next
-                                                    </Button>
-                                                </div>
+                                        {filteredPages.length === 0 && (
+                                            <div className="text-center py-8">
+                                                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                                <p className="text-gray-500">No pages found</p>
+                                                <p className="text-sm text-gray-400">Try adjusting your search or filters.</p>
                                             </div>
                                         )}
                                     </div>
@@ -732,7 +604,7 @@ export default function AdminPageManagement() {
                                     <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{userTotalItems}</div>
+                                    <div className="text-2xl font-bold">{filteredUsers.length}</div>
                                     <p className="text-xs text-muted-foreground">
                                         All users
                                     </p>
@@ -746,7 +618,7 @@ export default function AdminPageManagement() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">
-                                        {users.filter(u => u.status === 'active').length}
+                                        {filteredUsers.filter(u => u.status === 'active').length}
                                     </div>
                                     <p className="text-xs text-muted-foreground">
                                         Currently active
@@ -761,7 +633,7 @@ export default function AdminPageManagement() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">
-                                        {users.filter(u => u.role === 'unit_leader').length}
+                                        {filteredUsers.filter(u => u.role === 'unit_leader').length}
                                     </div>
                                     <p className="text-xs text-muted-foreground">
                                         Unit leaders
@@ -776,7 +648,7 @@ export default function AdminPageManagement() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">
-                                        {users.filter(u => u.role === 'member').length}
+                                        {filteredUsers.filter(u => u.role === 'member').length}
                                     </div>
                                     <p className="text-xs text-muted-foreground">
                                         Regular members
@@ -851,7 +723,7 @@ export default function AdminPageManagement() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {users.map((user) => (
+                                                {filteredUsers.map((user) => (
                                                     <tr key={user.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
                                                         <td className="p-4">
                                                             <div>
@@ -911,33 +783,11 @@ export default function AdminPageManagement() {
                                             </tbody>
                                         </table>
                                         
-                                        {/* User Pagination */}
-                                        {userTotalPages > 1 && (
-                                            <div className="flex items-center justify-between mt-4">
-                                                <div className="text-sm text-muted-foreground">
-                                                    Showing {((userCurrentPage - 1) * 15) + 1} to {Math.min(userCurrentPage * 15, userTotalItems)} of {userTotalItems} results
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        disabled={userCurrentPage === 1}
-                                                        onClick={() => fetchUsers(userCurrentPage - 1)}
-                                                    >
-                                                        Previous
-                                                    </Button>
-                                                    <span className="text-sm">
-                                                        Page {userCurrentPage} of {userTotalPages}
-                                                    </span>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        disabled={userCurrentPage === userTotalPages}
-                                                        onClick={() => fetchUsers(userCurrentPage + 1)}
-                                                    >
-                                                        Next
-                                                    </Button>
-                                                </div>
+                                        {filteredUsers.length === 0 && (
+                                            <div className="text-center py-8">
+                                                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                                <p className="text-gray-500">No users found</p>
+                                                <p className="text-sm text-gray-400">Try adjusting your search or filters.</p>
                                             </div>
                                         )}
                                     </div>

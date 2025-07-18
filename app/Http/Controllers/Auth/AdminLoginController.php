@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -60,6 +61,9 @@ class AdminLoginController extends Controller
             'last_activity_at' => now(),
         ]);
 
+        // Log the login activity
+        ActivityLogService::logLogin($user);
+
         // Always redirect for Inertia requests
         return redirect()->intended('/koabiga/admin/dashboard');
     }
@@ -69,10 +73,17 @@ class AdminLoginController extends Controller
      */
     public function destroy(Request $request)
     {
+        $user = Auth::user();
+        
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        // Log the logout activity
+        if ($user) {
+            ActivityLogService::logLogout($user);
+        }
 
         return redirect('/');
     }

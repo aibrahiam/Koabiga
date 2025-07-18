@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Form;
-use App\Models\User;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Form;
+use App\Services\FormService;
 
 class FormSeeder extends Seeder
 {
@@ -13,193 +14,121 @@ class FormSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get admin user for form creation
-        $admin = User::where('role', 'admin')->first();
-
-        if (!$admin) {
-            $this->command->error('Admin user not found. Please run DatabaseSeeder first.');
-            return;
-        }
-
-        $forms = [
+        $this->command->info('Seeding forms...');
+        
+        // First, sync forms from the leaders folder
+        $result = FormService::syncForms();
+        
+        $this->command->info("Synced {$result['total_synced']} forms from leaders folder");
+        
+        // Add some additional forms if needed
+        $additionalForms = [
             [
-                'name' => 'member_registration',
-                'title' => 'Member Registration Form',
-                'type' => 'registration',
-                'category' => 'member',
-                'description' => 'Form for registering new members to the agricultural unit',
+                'name' => 'feedback-form',
+                'title' => 'Feedback Form',
+                'type' => 'feedback',
+                'category' => 'other',
+                'description' => 'General feedback form for members and leaders',
                 'fields' => [
                     [
-                        'name' => 'christian_name',
-                        'type' => 'text',
-                        'label' => 'Christian Name',
+                        'name' => 'feedback_type',
+                        'type' => 'select',
+                        'label' => 'Feedback Type',
                         'required' => true,
-                        'placeholder' => 'Enter christian name'
+                        'options' => ['General', 'Technical', 'Suggestion', 'Complaint'],
+                        'placeholder' => 'Select feedback type',
+                        'description' => 'Choose the type of feedback you want to provide'
                     ],
                     [
-                        'name' => 'family_name',
+                        'name' => 'subject',
                         'type' => 'text',
-                        'label' => 'Family Name',
+                        'label' => 'Subject',
                         'required' => true,
-                        'placeholder' => 'Enter family name'
+                        'placeholder' => 'Enter feedback subject',
+                        'description' => 'Brief subject of your feedback'
                     ],
                     [
-                        'name' => 'phone',
-                        'type' => 'text',
-                        'label' => 'Phone Number',
+                        'name' => 'message',
+                        'type' => 'textarea',
+                        'label' => 'Message',
                         'required' => true,
-                        'placeholder' => '07XXXXXXXX'
+                        'placeholder' => 'Enter your feedback message',
+                        'description' => 'Detailed feedback message'
                     ],
                     [
-                        'name' => 'id_passport',
-                        'type' => 'text',
-                        'label' => 'ID/Passport Number',
-                        'required' => true,
-                        'placeholder' => 'Enter ID or passport number'
+                        'name' => 'rating',
+                        'type' => 'radio',
+                        'label' => 'Rating',
+                        'required' => false,
+                        'options' => ['1 - Poor', '2 - Fair', '3 - Good', '4 - Very Good', '5 - Excellent'],
+                        'description' => 'Rate your overall experience'
                     ]
                 ],
+                'target_roles' => ['admin', 'unit_leader', 'member'],
                 'status' => 'active',
-                'target_roles' => ['unit_leader'],
-                'user_id' => $admin->id
+                'user_id' => 1,
             ],
             [
-                'name' => 'land_assignment',
-                'title' => 'Land Assignment Request',
+                'name' => 'training-request',
+                'title' => 'Training Request Form',
                 'type' => 'request',
-                'category' => 'land',
-                'description' => 'Form for requesting land assignment for unit members',
+                'category' => 'training',
+                'description' => 'Request training sessions for members',
                 'fields' => [
                     [
-                        'name' => 'land_number',
+                        'name' => 'training_topic',
                         'type' => 'text',
-                        'label' => 'Land Number',
+                        'label' => 'Training Topic',
                         'required' => true,
-                        'placeholder' => 'Enter land number'
+                        'placeholder' => 'Enter training topic',
+                        'description' => 'What training do you need?'
                     ],
                     [
-                        'name' => 'zone',
-                        'type' => 'text',
-                        'label' => 'Zone',
+                        'name' => 'training_type',
+                        'type' => 'select',
+                        'label' => 'Training Type',
                         'required' => true,
-                        'placeholder' => 'Enter zone'
+                        'options' => ['Agricultural', 'Financial', 'Leadership', 'Technical', 'Other'],
+                        'placeholder' => 'Select training type',
+                        'description' => 'Type of training required'
                     ],
                     [
-                        'name' => 'area',
+                        'name' => 'participants_count',
                         'type' => 'number',
-                        'label' => 'Area (Hectares)',
+                        'label' => 'Number of Participants',
                         'required' => true,
-                        'placeholder' => '0.00'
+                        'placeholder' => 'Enter number of participants',
+                        'description' => 'How many people will attend?'
                     ],
                     [
-                        'name' => 'member_id',
-                        'type' => 'select',
-                        'label' => 'Assign to Member',
-                        'required' => true,
-                        'options' => ['Select member']
-                    ]
-                ],
-                'status' => 'active',
-                'target_roles' => ['unit_leader'],
-                'user_id' => $admin->id
-            ],
-            [
-                'name' => 'crop_registration',
-                'title' => 'Crop Registration Form',
-                'type' => 'registration',
-                'category' => 'crop',
-                'description' => 'Form for registering new crops in the unit',
-                'fields' => [
-                    [
-                        'name' => 'crop_name',
-                        'type' => 'text',
-                        'label' => 'Crop Name',
-                        'required' => true,
-                        'placeholder' => 'Enter crop name'
-                    ],
-                    [
-                        'name' => 'crop_type',
-                        'type' => 'select',
-                        'label' => 'Crop Type',
-                        'required' => true,
-                        'options' => ['maize', 'beans', 'rice', 'wheat', 'potatoes', 'cassava', 'vegetables', 'fruits']
-                    ],
-                    [
-                        'name' => 'variety',
-                        'type' => 'text',
-                        'label' => 'Crop Variety',
-                        'required' => true,
-                        'placeholder' => 'Enter crop variety'
-                    ],
-                    [
-                        'name' => 'planting_date',
+                        'name' => 'preferred_date',
                         'type' => 'date',
-                        'label' => 'Planting Date',
-                        'required' => true
+                        'label' => 'Preferred Date',
+                        'required' => true,
+                        'description' => 'When would you like the training?'
                     ],
                     [
-                        'name' => 'area_planted',
-                        'type' => 'number',
-                        'label' => 'Area Planted (Hectares)',
-                        'required' => true,
-                        'placeholder' => '0.00'
+                        'name' => 'additional_notes',
+                        'type' => 'textarea',
+                        'label' => 'Additional Notes',
+                        'required' => false,
+                        'placeholder' => 'Any additional information',
+                        'description' => 'Additional notes or requirements'
                     ]
                 ],
-                'status' => 'active',
                 'target_roles' => ['unit_leader'],
-                'user_id' => $admin->id
-            ],
-            [
-                'name' => 'harvest_report',
-                'title' => 'Harvest Report Form',
-                'type' => 'report',
-                'category' => 'harvest',
-                'description' => 'Form for reporting harvest yields and produce',
-                'fields' => [
-                    [
-                        'name' => 'produce_name',
-                        'type' => 'text',
-                        'label' => 'Produce Name',
-                        'required' => true,
-                        'placeholder' => 'Enter produce name'
-                    ],
-                    [
-                        'name' => 'crop_id',
-                        'type' => 'select',
-                        'label' => 'Source Crop',
-                        'required' => true,
-                        'options' => ['Select crop']
-                    ],
-                    [
-                        'name' => 'harvest_date',
-                        'type' => 'date',
-                        'label' => 'Harvest Date',
-                        'required' => true
-                    ],
-                    [
-                        'name' => 'quantity_harvested',
-                        'type' => 'number',
-                        'label' => 'Quantity Harvested (kg)',
-                        'required' => true,
-                        'placeholder' => '0.00'
-                    ],
-                    [
-                        'name' => 'quality_grade',
-                        'type' => 'select',
-                        'label' => 'Quality Grade',
-                        'required' => true,
-                        'options' => ['grade_a', 'grade_b', 'grade_c', 'rejected']
-                    ]
-                ],
                 'status' => 'active',
-                'target_roles' => ['unit_leader'],
-                'user_id' => $admin->id
+                'user_id' => 1,
             ]
         ];
 
-        foreach ($forms as $formData) {
-            Form::create($formData);
+        foreach ($additionalForms as $formData) {
+            Form::updateOrCreate(
+                ['name' => $formData['name']],
+                $formData
+            );
         }
 
-        $this->command->info('Created ' . count($forms) . ' sample forms');
+        $this->command->info('Forms seeded successfully!');
     }
 } 

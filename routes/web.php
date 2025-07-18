@@ -38,9 +38,6 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
     
     // Members Management (handled by resource routes below)
     
-    // Generate unit code (must come before resource route)
-    Route::post('units/generate-code', [\App\Http\Controllers\UnitController::class, 'generateCode'])->name('units.generate-code');
-    
     // Units Management
     Route::resource('units', \App\Http\Controllers\UnitController::class)->names([
         'index' => 'units.index',
@@ -51,6 +48,9 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
         'update' => 'units.update',
         'destroy' => 'units.destroy',
     ]);
+    
+    // Generate unit code
+    Route::post('units/generate-code', [\App\Http\Controllers\UnitController::class, 'generateCode'])->name('units.generate-code');
 
 
 
@@ -66,21 +66,20 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
     })->name('reports.generate');
     
     // Fee Rules Management
-    Route::get('fee-rules', function () {
-        return Inertia::render('koabiga/admin/fee-rules/fee-rules');
-    })->name('fee-rules');
+    Route::resource('fee-rules', \App\Http\Controllers\Admin\FeeRuleController::class)->names([
+        'index' => 'fee-rules.index',
+        'create' => 'fee-rules.create',
+        'store' => 'fee-rules.store',
+        'show' => 'fee-rules.show',
+        'edit' => 'fee-rules.edit',
+        'update' => 'fee-rules.update',
+        'destroy' => 'fee-rules.destroy',
+    ]);
     
-    Route::get('fee-rules/create-fee', function () {
-        return Inertia::render('koabiga/admin/fee-rules/create-fee');
-    })->name('fee-rules.create-fee');
-
-    Route::get('fee-rules/{id}', function ($id) {
-        return Inertia::render('koabiga/admin/fee-rules/view-fee', ['id' => $id]);
-    })->name('fee-rules.show');
-
-    Route::get('fee-rules/{id}/edit', function ($id) {
-        return Inertia::render('koabiga/admin/fee-rules/edit-fee', ['id' => $id]);
-    })->name('fee-rules.edit');
+    // Fee Rules Actions
+    Route::post('fee-rules/{feeRule}/apply', [\App\Http\Controllers\Admin\FeeRuleController::class, 'applyFeeRule'])->name('fee-rules.apply');
+    Route::post('fee-rules/{feeRule}/schedule', [\App\Http\Controllers\Admin\FeeRuleController::class, 'scheduleFeeRule'])->name('fee-rules.schedule');
+    Route::post('fee-rules/{feeRule}/assign-units', [\App\Http\Controllers\Admin\FeeRuleController::class, 'assignToUnits'])->name('fee-rules.assign-units');
     
     // Settings
     Route::get('settings', function () {
@@ -105,9 +104,19 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
     })->name('forms.edit');
     
     // Page Management
-    Route::get('page-management', function () {
-        return Inertia::render('koabiga/admin/pages/page-management');
-    })->name('page-management');
+    Route::get('page-management', [App\Http\Controllers\Admin\PageController::class, 'index'])->name('page-management');
+    Route::get('pages/create', [App\Http\Controllers\Admin\PageController::class, 'create'])->name('pages.create');
+    Route::get('pages/{page}/edit', [App\Http\Controllers\Admin\PageController::class, 'edit'])->name('pages.edit');
+    Route::get('pages/navigation/{role}/preview', [App\Http\Controllers\Admin\PageController::class, 'getNavigationPreview'])->name('pages.navigation.preview');
+    Route::get('pages/stats', [App\Http\Controllers\Admin\PageController::class, 'getStats'])->name('pages.stats');
+    
+    // Page CRUD operations
+    Route::post('pages', [App\Http\Controllers\Admin\PageController::class, 'store'])->name('pages.store');
+    Route::put('pages/{page}', [App\Http\Controllers\Admin\PageController::class, 'update'])->name('pages.update');
+    Route::delete('pages/{page}', [App\Http\Controllers\Admin\PageController::class, 'destroy'])->name('pages.destroy');
+
+    // Member Management CRUD operations
+    Route::put('members/{member}', [App\Http\Controllers\Admin\MemberController::class, 'update'])->name('members.update');
 
     Route::get('pages/{id}/edit', function ($id) {
         return Inertia::render('koabiga/admin/pages/edit-page', ['id' => $id]);
@@ -115,16 +124,59 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
 
     // System Monitoring
     Route::get('logs', function () {
-        return Inertia::render('koabiga/admin/system-log/logs');
+        // Calculate system log statistics
+        $stats = [
+            'total_activity_logs' => \App\Models\ActivityLog::count(),
+            'total_error_logs' => \App\Models\ErrorLog::count(),
+            'total_login_sessions' => \App\Models\LoginSession::count(),
+            'today_activity_logs' => \App\Models\ActivityLog::whereDate('created_at', today())->count(),
+            'today_error_logs' => \App\Models\ErrorLog::whereDate('created_at', today())->count(),
+            'today_login_sessions' => \App\Models\LoginSession::whereDate('created_at', today())->count(),
+            'unique_users' => \App\Models\ActivityLog::whereNotNull('user_id')->distinct('user_id')->count(),
+            'system_health' => 'good', // This could be calculated based on error rates
+        ];
+
+        return Inertia::render('koabiga/admin/system-log/logs', [
+            'stats' => $stats,
+        ]);
     })->name('logs');
 
     Route::get('activity-logs', function () {
-        return Inertia::render('koabiga/admin/monitoring/activity-logs');
+        $query = \App\Models\ActivityLog::with('user:id,christian_name,family_name,email,role')
+            ->orderBy('created_at', 'desc');
+
+        // Get paginated results
+        $activityLogs = $query->paginate(50);
+
+        // Calculate statistics
+        $stats = [
+            'total_logs' => \App\Models\ActivityLog::count(),
+            'today_logs' => \App\Models\ActivityLog::whereDate('created_at', today())->count(),
+            'this_week_logs' => \App\Models\ActivityLog::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+            'this_month_logs' => \App\Models\ActivityLog::whereMonth('created_at', now()->month)->count(),
+            'unique_users' => \App\Models\ActivityLog::whereNotNull('user_id')->distinct('user_id')->count(),
+        ];
+
+        return Inertia::render('koabiga/admin/system-log/activity-logs', [
+            'activityLogs' => $activityLogs->items(),
+            'stats' => $stats,
+            'pagination' => [
+                'current_page' => $activityLogs->currentPage(),
+                'last_page' => $activityLogs->lastPage(),
+                'per_page' => $activityLogs->perPage(),
+                'total' => $activityLogs->total(),
+            ],
+        ]);
     })->name('activity-logs');
 
-    Route::get('error-logs', function () {
-        return Inertia::render('koabiga/admin/system-log/error-logs');
-    })->name('error-logs');
+    // Error Logs
+    Route::get('error-logs', [\App\Http\Controllers\Admin\ErrorLogController::class, 'index'])->name('error-logs');
+    Route::get('error-logs/{errorLog}', [\App\Http\Controllers\Admin\ErrorLogController::class, 'show'])->name('error-logs.show');
+    Route::post('error-logs/{errorLog}/resolve', [\App\Http\Controllers\Admin\ErrorLogController::class, 'resolve'])->name('error-logs.resolve');
+    Route::post('error-logs/bulk-resolve', [\App\Http\Controllers\Admin\ErrorLogController::class, 'bulkResolve'])->name('error-logs.bulk-resolve');
+    Route::post('error-logs/clear-old', [\App\Http\Controllers\Admin\ErrorLogController::class, 'clearOldLogs'])->name('error-logs.clear-old');
+
+
 
     Route::get('login-sessions', function () {
         return Inertia::render('koabiga/admin/system-log/login-sessions');
@@ -185,7 +237,30 @@ Route::prefix('koabiga/members')->name('koabiga.members.')->middleware(['auth', 
 
     // Add Fees route
     Route::get('fees', function () {
-        return Inertia::render('koabiga/member/fees');
+        $user = \Illuminate\Support\Facades\Auth::user();
+        
+        // Get fee applications for the current user
+        $feeApplications = \App\Models\FeeApplication::where('user_id', $user->id)
+            ->with(['feeRule:id,name,type,description'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Calculate stats
+        $stats = [
+            'total_fees' => $feeApplications->count(),
+            'paid_fees' => $feeApplications->where('status', 'paid')->count(),
+            'pending_fees' => $feeApplications->where('status', 'pending')->count(),
+            'overdue_fees' => $feeApplications->where('status', 'overdue')->count(),
+            'total_amount' => $feeApplications->sum('amount'),
+            'paid_amount' => $feeApplications->where('status', 'paid')->sum('amount'),
+            'pending_amount' => $feeApplications->where('status', 'pending')->sum('amount'),
+            'overdue_amount' => $feeApplications->where('status', 'overdue')->sum('amount'),
+        ];
+
+        return Inertia::render('koabiga/member/fees', [
+            'feeApplications' => $feeApplications,
+            'stats' => $stats,
+        ]);
     })->name('fees');
 });
 
@@ -241,6 +316,33 @@ Route::prefix('koabiga/leaders')->name('koabiga.leaders.')->middleware(['auth', 
     Route::get('settings', function () {
         return Inertia::render('koabiga/leaders/settings');
     })->name('settings');
+    
+    Route::get('fees', function () {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        
+        // Get fee applications for the current leader
+        $feeApplications = \App\Models\FeeApplication::where('user_id', $user->id)
+            ->with(['feeRule:id,name,type,description'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Calculate stats
+        $stats = [
+            'total_fees' => $feeApplications->count(),
+            'paid_fees' => $feeApplications->where('status', 'paid')->count(),
+            'pending_fees' => $feeApplications->where('status', 'pending')->count(),
+            'overdue_fees' => $feeApplications->where('status', 'overdue')->count(),
+            'total_amount' => $feeApplications->sum('amount'),
+            'paid_amount' => $feeApplications->where('status', 'paid')->sum('amount'),
+            'pending_amount' => $feeApplications->where('status', 'pending')->sum('amount'),
+            'overdue_amount' => $feeApplications->where('status', 'overdue')->sum('amount'),
+        ];
+
+        return Inertia::render('koabiga/leaders/fees', [
+            'feeApplications' => $feeApplications,
+            'stats' => $stats,
+        ]);
+    })->name('fees');
 });
 
 

@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             FeeRuleSeeder::class,
             FormSeeder::class,
             AgricultureSeeder::class,
+            PageSeeder::class,
         ]);
     }
 }

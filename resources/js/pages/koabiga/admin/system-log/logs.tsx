@@ -1,24 +1,23 @@
 import { Head } from '@inertiajs/react';
 import { 
     FileText, 
-    Search, 
-    Filter, 
-    Download,
-    Eye,
-    Calendar,
+    Activity,
     AlertTriangle,
-    Info,
-    CheckCircle,
-    XCircle
+    Users,
+    Clock,
+    ArrowRight,
+    BarChart3,
+    Shield,
+    Database,
+    Server
 } from 'lucide-react';
 
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Link } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -31,70 +30,77 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function AdminLogs() {
-    // Mock data for demonstration
-    const logs = [
+interface LogStats {
+    total_activity_logs: number;
+    total_error_logs: number;
+    total_login_sessions: number;
+    today_activity_logs: number;
+    today_error_logs: number;
+    today_login_sessions: number;
+    unique_users: number;
+    system_health: 'good' | 'warning' | 'error';
+}
+
+interface LogsProps {
+    stats: LogStats;
+}
+
+export default function AdminLogs({ stats }: LogsProps) {
+    const logCategories = [
         {
-            id: 1,
-            level: 'info',
-            message: 'User login successful',
-            user: 'sarah.smith@koabiga.com',
-            module: 'authentication',
-            timestamp: '2024-06-27 10:30:15',
+            title: 'Activity Logs',
+            description: 'Monitor user activities and system events',
+            href: '/koabiga/admin/activity-logs',
+            icon: Activity,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+            borderColor: 'border-blue-200 dark:border-blue-800',
+            stats: {
+                total: stats.total_activity_logs,
+                today: stats.today_activity_logs,
+                label: 'Total Activities'
+            }
         },
         {
-            id: 2,
-            level: 'warning',
-            message: 'Failed login attempt',
-            user: 'unknown@example.com',
-            module: 'authentication',
-            timestamp: '2024-06-27 10:25:30',
+            title: 'Error Logs',
+            description: 'Track system errors and exceptions',
+            href: '/koabiga/admin/error-logs',
+            icon: AlertTriangle,
+            color: 'text-red-600',
+            bgColor: 'bg-red-50 dark:bg-red-900/20',
+            borderColor: 'border-red-200 dark:border-red-800',
+            stats: {
+                total: stats.total_error_logs,
+                today: stats.today_error_logs,
+                label: 'Total Errors'
+            }
         },
         {
-            id: 3,
-            level: 'error',
-            message: 'Database connection failed',
-            user: 'system',
-            module: 'database',
-            timestamp: '2024-06-27 10:20:45',
-        },
-        {
-            id: 4,
-            level: 'success',
-            message: 'Payment processed',
-            user: 'emily.davis@koabiga.com',
-            module: 'payments',
-            timestamp: '2024-06-27 10:15:20',
-        },
+            title: 'Login Sessions',
+            description: 'Monitor user authentication and sessions',
+            href: '/koabiga/admin/login-sessions',
+            icon: Users,
+            color: 'text-green-600',
+            bgColor: 'bg-green-50 dark:bg-green-900/20',
+            borderColor: 'border-green-200 dark:border-green-800',
+            stats: {
+                total: stats.total_login_sessions,
+                today: stats.today_login_sessions,
+                label: 'Total Sessions'
+            }
+        }
     ];
 
-    const getLevelBadge = (level: string) => {
-        switch (level) {
-            case 'info':
-                return <Badge variant="outline" className="border-blue-200 text-blue-700">Info</Badge>;
+    const getSystemHealthBadge = (health: string) => {
+        switch (health) {
+            case 'good':
+                return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Good</Badge>;
             case 'warning':
-                return <Badge variant="outline" className="border-yellow-200 text-yellow-700">Warning</Badge>;
+                return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Warning</Badge>;
             case 'error':
                 return <Badge variant="destructive">Error</Badge>;
-            case 'success':
-                return <Badge variant="default" className="bg-green-100 text-green-800">Success</Badge>;
             default:
-                return <Badge variant="outline">{level}</Badge>;
-        }
-    };
-
-    const getLevelIcon = (level: string) => {
-        switch (level) {
-            case 'info':
-                return <Info className="h-4 w-4 text-blue-600" />;
-            case 'warning':
-                return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
-            case 'error':
-                return <XCircle className="h-4 w-4 text-red-600" />;
-            case 'success':
-                return <CheckCircle className="h-4 w-4 text-green-600" />;
-            default:
-                return <Info className="h-4 w-4 text-gray-600" />;
+                return <Badge variant="outline">Unknown</Badge>;
         }
     };
 
@@ -109,138 +115,130 @@ export default function AdminLogs() {
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">System Logs</h1>
                         <p className="text-gray-600 dark:text-gray-400">Monitor system activities and events</p>
                     </div>
-                    <Button>
-                        <Download className="h-4 w-4 mr-2" />
-                        Export Logs
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">System Health:</span>
+                        {getSystemHealthBadge(stats.system_health)}
+                    </div>
                 </div>
 
-                {/* Stats Cards */}
+                {/* System Overview Stats */}
                 <div className="grid gap-4 md:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Logs</CardTitle>
-                            <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <CardTitle className="text-sm font-medium">Total Activities</CardTitle>
+                            <Activity className="h-4 w-4 text-blue-600" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{logs.length}</div>
-                            <p className="text-xs text-muted-foreground">Today</p>
+                            <div className="text-2xl font-bold">{stats.total_activity_logs}</div>
+                            <p className="text-xs text-muted-foreground">+{stats.today_activity_logs} today</p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Info</CardTitle>
-                            <Info className="h-4 w-4 text-blue-600" />
+                            <CardTitle className="text-sm font-medium">System Errors</CardTitle>
+                            <AlertTriangle className="h-4 w-4 text-red-600" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-blue-600">
-                                {logs.filter(l => l.level === 'info').length}
-                            </div>
-                            <p className="text-xs text-muted-foreground">Information logs</p>
+                            <div className="text-2xl font-bold text-red-600">{stats.total_error_logs}</div>
+                            <p className="text-xs text-muted-foreground">+{stats.today_error_logs} today</p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Warnings</CardTitle>
-                            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                            <CardTitle className="text-sm font-medium">Login Sessions</CardTitle>
+                            <Users className="h-4 w-4 text-green-600" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-yellow-600">
-                                {logs.filter(l => l.level === 'warning').length}
-                            </div>
-                            <p className="text-xs text-muted-foreground">Warning logs</p>
+                            <div className="text-2xl font-bold text-green-600">{stats.total_login_sessions}</div>
+                            <p className="text-xs text-muted-foreground">+{stats.today_login_sessions} today</p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Errors</CardTitle>
-                            <XCircle className="h-4 w-4 text-red-600" />
+                            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                            <Clock className="h-4 w-4 text-purple-600" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-red-600">
-                                {logs.filter(l => l.level === 'error').length}
-                            </div>
-                            <p className="text-xs text-muted-foreground">Error logs</p>
+                            <div className="text-2xl font-bold text-purple-600">{stats.unique_users}</div>
+                            <p className="text-xs text-muted-foreground">Unique users</p>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Filters and Search */}
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex flex-1 items-center space-x-2">
-                            <div className="relative flex-1 max-w-sm">
-                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input placeholder="Search logs..." className="pl-8" />
-                            </div>
-                            <Select>
-                                <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Filter by level" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Levels</SelectItem>
-                                    <SelectItem value="info">Info</SelectItem>
-                                    <SelectItem value="warning">Warning</SelectItem>
-                                    <SelectItem value="error">Error</SelectItem>
-                                    <SelectItem value="success">Success</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Log Categories */}
+                <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+                    {logCategories.map((category) => {
+                        const IconComponent = category.icon;
+                        return (
+                            <Card key={category.title} className={`border-2 ${category.borderColor} hover:shadow-lg transition-shadow`}>
+                                <CardHeader className={`${category.bgColor} rounded-t-lg`}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            <div className={`p-2 rounded-lg bg-white dark:bg-gray-800`}>
+                                                <IconComponent className={`h-6 w-6 ${category.color}`} />
+                                            </div>
+                                            <div>
+                                                <CardTitle className="text-lg">{category.title}</CardTitle>
+                                                <CardDescription>{category.description}</CardDescription>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <div className="text-2xl font-bold">{category.stats.total}</div>
+                                            <div className="text-sm text-muted-foreground">{category.stats.label}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm font-medium text-green-600">+{category.stats.today}</div>
+                                            <div className="text-xs text-muted-foreground">Today</div>
+                                        </div>
+                                    </div>
+                                    <Button asChild className="w-full" variant="outline">
+                                        <Link href={category.href}>
+                                            View Details
+                                            <ArrowRight className="h-4 w-4 ml-2" />
+                                        </Link>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </div>
 
-                {/* Logs Table */}
+                {/* Quick Actions */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>System Logs</CardTitle>
-                        <CardDescription>Detailed system activity logs and events</CardDescription>
+                        <CardTitle>Quick Actions</CardTitle>
+                        <CardDescription>Common system monitoring tasks</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="text-left p-4 font-medium">Level</th>
-                                        <th className="text-left p-4 font-medium">Message</th>
-                                        <th className="text-left p-4 font-medium">User</th>
-                                        <th className="text-left p-4 font-medium">Module</th>
-                                        <th className="text-left p-4 font-medium">Timestamp</th>
-                                        <th className="text-left p-4 font-medium">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {logs.map((log) => (
-                                        <tr key={log.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                                            <td className="p-4">
-                                                <div className="flex items-center space-x-2">
-                                                    {getLevelIcon(log.level)}
-                                                    {getLevelBadge(log.level)}
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="font-medium">{log.message}</div>
-                                            </td>
-                                            <td className="p-4">
-                                                <span className="text-sm">{log.user}</span>
-                                            </td>
-                                            <td className="p-4">
-                                                <Badge variant="outline">{log.module}</Badge>
-                                            </td>
-                                            <td className="p-4">
-                                                <span className="text-sm">{log.timestamp}</span>
-                                            </td>
-                                            <td className="p-4">
-                                                <Button variant="ghost" size="sm">
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <div className="grid gap-4 md:grid-cols-3">
+                            <Button variant="outline" className="h-auto p-4 flex flex-col items-start space-y-2">
+                                <BarChart3 className="h-5 w-5" />
+                                <div className="text-left">
+                                    <div className="font-medium">System Analytics</div>
+                                    <div className="text-sm text-muted-foreground">View detailed analytics</div>
+                                </div>
+                            </Button>
+                            <Button variant="outline" className="h-auto p-4 flex flex-col items-start space-y-2">
+                                <Shield className="h-5 w-5" />
+                                <div className="text-left">
+                                    <div className="font-medium">Security Audit</div>
+                                    <div className="text-sm text-muted-foreground">Review security logs</div>
+                                </div>
+                            </Button>
+                            <Button variant="outline" className="h-auto p-4 flex flex-col items-start space-y-2">
+                                <Database className="h-5 w-5" />
+                                <div className="text-left">
+                                    <div className="font-medium">Database Health</div>
+                                    <div className="text-sm text-muted-foreground">Check database status</div>
+                                </div>
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>

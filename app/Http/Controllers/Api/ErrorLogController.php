@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ErrorLog;
+use App\Services\ErrorLogService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -13,56 +15,45 @@ class ErrorLogController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        // For now, return mock data since we don't have a dedicated error logs table
-        // In a real implementation, you would query from an error_logs table
-        
-        $mockLogs = [
-            [
-                'id' => 1,
-                'level' => 'error',
-                'message' => 'Database connection failed',
-                'user_id' => 1,
-                'user' => ['christian_name' => 'John', 'family_name' => 'Doe'],
-                'created_at' => now()->subHours(2)->toISOString(),
-                'resolved' => false,
-            ],
-            [
-                'id' => 2,
-                'level' => 'warning',
-                'message' => 'API rate limit exceeded',
-                'user_id' => 2,
-                'user' => ['christian_name' => 'Jane', 'family_name' => 'Smith'],
-                'created_at' => now()->subHours(4)->toISOString(),
-                'resolved' => true,
-            ],
-        ];
+        $query = ErrorLog::with('user:id,christian_name,family_name,email')
+            ->orderBy('created_at', 'desc');
+
+        // Filter by level
+        if ($request->filled('level')) {
+            $query->byLevel($request->level);
+        }
+
+        // Filter by resolved status
+        if ($request->filled('resolved')) {
+            if ($request->resolved === 'true') {
+                $query->resolved();
+            } else {
+                $query->unresolved();
+            }
+        }
+
+        // Search by message
+        if ($request->filled('search')) {
+            $query->where('message', 'like', '%' . $request->search . '%');
+        }
+
+        $errorLogs = $query->paginate($request->get('per_page', 15));
 
         return response()->json([
             'success' => true,
-            'data' => $mockLogs,
+            'data' => $errorLogs->items(),
             'pagination' => [
-                'current_page' => 1,
-                'last_page' => 1,
-                'per_page' => 15,
-                'total' => count($mockLogs),
+                'current_page' => $errorLogs->currentPage(),
+                'last_page' => $errorLogs->lastPage(),
+                'per_page' => $errorLogs->perPage(),
+                'total' => $errorLogs->total(),
             ]
         ]);
     }
 
     public function statistics(): JsonResponse
     {
-        $stats = [
-            'total_errors' => 0,
-            'errors_today' => 0,
-            'errors_this_week' => 0,
-            'errors_this_month' => 0,
-            'unresolved_errors' => 0,
-            'error_levels' => [
-                'error' => 0,
-                'warning' => 0,
-                'info' => 0,
-            ],
-        ];
+        $stats = ErrorLogService::getStatistics();
 
         return response()->json([
             'success' => true,
@@ -72,19 +63,8 @@ class ErrorLogController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        // Mock error log detail
-        $errorLog = [
-            'id' => $id,
-            'level' => 'error',
-            'message' => 'Database connection failed',
-            'stack_trace' => 'Stack trace details...',
-            'user_id' => 1,
-            'user' => ['christian_name' => 'John', 'family_name' => 'Doe'],
-            'created_at' => now()->subHours(2)->toISOString(),
-            'resolved' => false,
-            'resolved_at' => null,
-            'resolved_by' => null,
-        ];
+        $errorLog = ErrorLog::with(['user:id,christian_name,family_name,email', 'resolvedBy:id,christian_name,family_name'])
+            ->findOrFail($id);
 
         return response()->json([
             'success' => true,
@@ -94,17 +74,26 @@ class ErrorLogController extends Controller
 
     public function resolve(int $id): JsonResponse
     {
-        // Mock resolve functionality
+        $errorLog = ErrorLog::findOrFail($id);
+        $success = $errorLog->markAsResolved(Auth::id());
+
+        if ($success) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Error log marked as resolved',
+                'data' => [
+                    'id' => $id,
+                    'resolved' => true,
+                    'resolved_at' => $errorLog->resolved_at->toISOString(),
+                    'resolved_by' => Auth::id(),
+                ]
+            ]);
+        }
+
         return response()->json([
-            'success' => true,
-            'message' => 'Error log marked as resolved',
-            'data' => [
-                'id' => $id,
-                'resolved' => true,
-                'resolved_at' => now()->toISOString(),
-                'resolved_by' => Auth::id(),
-            ]
-        ]);
+            'success' => false,
+            'message' => 'Failed to mark error log as resolved'
+        ], 500);
     }
 
     public function bulkResolve(Request $request): JsonResponse
@@ -118,11 +107,17 @@ class ErrorLogController extends Controller
             ], 400);
         }
 
-        // Mock bulk resolve functionality
+        $resolvedCount = ErrorLog::whereIn('id', $ids)
+            ->update([
+                'resolved' => true,
+                'resolved_at' => now(),
+                'resolved_by' => Auth::id(),
+            ]);
+
         return response()->json([
             'success' => true,
-            'message' => count($ids) . ' error logs marked as resolved',
-            'resolved_count' => count($ids)
+            'message' => $resolvedCount . ' error logs marked as resolved',
+            'resolved_count' => $resolvedCount
         ]);
     }
 
@@ -130,11 +125,12 @@ class ErrorLogController extends Controller
     {
         $days = $request->get('days', 30);
         
-        // Mock clear old logs functionality
+        $deletedCount = ErrorLogService::cleanupOldLogs($days);
+
         return response()->json([
             'success' => true,
             'message' => "Cleared old error logs older than {$days} days",
-            'deleted_count' => 0
+            'deleted_count' => $deletedCount
         ]);
     }
 } 

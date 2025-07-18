@@ -101,9 +101,29 @@ class FeeApplication extends Model
     }
 
     /**
+     * Scope to get applications due before a specific date
+     */
+    public function scopeDueBefore($query, $date)
+    {
+        return $query->where('due_date', '<', $date);
+    }
+
+    /**
+     * Mark application as overdue
+     */
+    public function markAsOverdue(): bool
+    {
+        if ($this->status === self::STATUS_PENDING) {
+            $this->update(['status' => self::STATUS_OVERDUE]);
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Calculate fee amount based on fee rule and user
      */
-    public static function calculateFeeAmount(FeeRule $feeRule, User $user, Unit $unit = null): float
+    public static function calculateFeeAmount(FeeRule $feeRule, User $user, ?Unit $unit = null): float
     {
         $baseAmount = $feeRule->amount;
 

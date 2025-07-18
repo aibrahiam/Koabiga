@@ -12,6 +12,7 @@ use Throwable;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Services\ErrorLogService;
 
 class Handler extends ExceptionHandler
 {
@@ -32,7 +33,8 @@ class Handler extends ExceptionHandler
     public function register(): void
     {
         $this->reportable(function (Throwable $e) {
-            //
+            // Log all exceptions to our database
+            ErrorLogService::logError($e);
         });
 
         // Handle authentication exceptions

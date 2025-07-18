@@ -112,7 +112,7 @@ export default function CreateZone({ availableLeaders = [] }: CreateZoneProps) {
     };
 
     return (
-        <>
+        <div>
             <Head title="Create Zone - Koabiga Admin" />
             
             <div className="min-h-screen flex flex-col">
@@ -148,192 +148,193 @@ export default function CreateZone({ availableLeaders = [] }: CreateZoneProps) {
                             </CardHeader>
                             <CardContent>
                                 <form onSubmit={handleSubmit} className="space-y-6">
-                                {/* Basic Information */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Zone Name *</Label>
-                                        <Input
-                                            id="name"
-                                            placeholder="Enter zone name"
-                                            value={formData.name}
-                                            onChange={(e) => handleInputChange('name', e.target.value)}
-                                            className={errors.name ? 'border-red-500' : ''}
-                                        />
-                                        {errors.name && (
-                                            <p className="text-sm text-red-600 flex items-center">
-                                                <AlertCircle className="w-3 h-3 mr-1" />
-                                                {errors.name}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="code">Zone Code *</Label>
-                                        <Input
-                                            id="code"
-                                            placeholder="e.g., NAZ, SVZ"
-                                            value={formData.code}
-                                            onChange={(e) => handleInputChange('code', e.target.value.toUpperCase())}
-                                            className={errors.code ? 'border-red-500' : ''}
-                                        />
-                                        {errors.code && (
-                                            <p className="text-sm text-red-600 flex items-center">
-                                                <AlertCircle className="w-3 h-3 mr-1" />
-                                                {errors.code}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Location */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="location">Location</Label>
-                                    <Input
-                                        id="location"
-                                        placeholder="e.g., Northern Region, District A"
-                                        value={formData.location}
-                                        onChange={(e) => handleInputChange('location', e.target.value)}
-                                        className={errors.location ? 'border-red-500' : ''}
-                                    />
-                                    {errors.location && (
-                                        <p className="text-sm text-red-600 flex items-center">
-                                            <AlertCircle className="w-3 h-3 mr-1" />
-                                            {errors.location}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Description */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="description">Description</Label>
-                                    <Textarea
-                                        id="description"
-                                        placeholder="Describe the zone's characteristics, climate, soil type, etc."
-                                        value={formData.description}
-                                        onChange={(e) => handleInputChange('description', e.target.value)}
-                                        rows={4}
-                                        className={errors.description ? 'border-red-500' : ''}
-                                    />
-                                    {errors.description && (
-                                        <p className="text-sm text-red-600 flex items-center">
-                                            <AlertCircle className="w-3 h-3 mr-1" />
-                                            {errors.description}
-                                        </p>
-                                    )}
-                                    <p className="text-xs text-gray-500">
-                                        {formData.description.length}/500 characters
-                                    </p>
-                                </div>
-
-                                {/* Leader Assignment */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="leader">Zone Leader</Label>
-                                    <Select
-                                        value={formData.leader_id}
-                                        onValueChange={(value) => handleInputChange('leader_id', value)}
-                                    >
-                                        <SelectTrigger className={errors.leader_id ? 'border-red-500' : ''}>
-                                            <SelectValue placeholder="Select a leader (optional)" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">No Leader Assigned</SelectItem>
-                                            {availableLeaders
-                                                .filter(leader => leader && leader.id && leader.name)
-                                                .map((leader) => (
-                                                    <SelectItem key={leader.id} value={String(leader.id)}>
-                                                        <div className="flex items-center space-x-2">
-                                                            <User className="w-4 h-4" />
-                                                            <span>{leader.name}</span>
-                                                            <Badge variant="outline" className="text-xs">
-                                                                {leader.email}
-                                                            </Badge>
-                                                        </div>
-                                                    </SelectItem>
-                                                ))}
-                                            {availableLeaders.filter(leader => leader && leader.id && leader.name).length === 0 && (
-                                                <SelectItem value="none" disabled>
-                                                    No available leaders
-                                                </SelectItem>
+                                    {/* Basic Information */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="name">Zone Name *</Label>
+                                            <Input
+                                                id="name"
+                                                placeholder="Enter zone name"
+                                                value={formData.name}
+                                                onChange={(e) => handleInputChange('name', e.target.value)}
+                                                className={errors.name ? 'border-red-500' : ''}
+                                            />
+                                            {errors.name && (
+                                                <p className="text-sm text-red-600 flex items-center">
+                                                    <AlertCircle className="w-3 h-3 mr-1" />
+                                                    {errors.name}
+                                                </p>
                                             )}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.leader_id && (
-                                        <p className="text-sm text-red-600 flex items-center">
-                                            <AlertCircle className="w-3 h-3 mr-1" />
-                                            {errors.leader_id}
-                                        </p>
-                                    )}
-                                    {availableLeaders.length === 0 && (
-                                        <p className="text-sm text-yellow-600 flex items-center">
-                                            <AlertCircle className="w-3 h-3 mr-1" />
-                                            No available leaders found. You can assign a leader later.
-                                        </p>
-                                    )}
-                                </div>
+                                        </div>
 
-                                {/* Status */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="status">Status</Label>
-                                    <Select
-                                        value={formData.status}
-                                        onValueChange={(value) => handleInputChange('status', value)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="active">
-                                                <div className="flex items-center space-x-2">
-                                                    <CheckCircle className="w-4 h-4 text-green-600" />
-                                                    <span>Active</span>
-                                                </div>
-                                            </SelectItem>
-                                            <SelectItem value="inactive">
-                                                <div className="flex items-center space-x-2">
-                                                    <X className="w-4 h-4 text-red-600" />
-                                                    <span>Inactive</span>
-                                                </div>
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-gray-500">
-                                        Active zones can be assigned units and members
-                                    </p>
-                                </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="code">Zone Code *</Label>
+                                            <Input
+                                                id="code"
+                                                placeholder="e.g., NAZ, SVZ"
+                                                value={formData.code}
+                                                onChange={(e) => handleInputChange('code', e.target.value.toUpperCase())}
+                                                className={errors.code ? 'border-red-500' : ''}
+                                            />
+                                            {errors.code && (
+                                                <p className="text-sm text-red-600 flex items-center">
+                                                    <AlertCircle className="w-3 h-3 mr-1" />
+                                                    {errors.code}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
 
-                                {/* Form Actions */}
-                                <div className="flex items-center justify-end space-x-4 pt-6 border-t">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => router.visit('/koabiga/admin/zones')}
-                                        disabled={isSubmitting}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        className="bg-emerald-600 hover:bg-emerald-700"
-                                        disabled={isSubmitting}
-                                    >
-                                        {isSubmitting ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                                                Creating...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Save className="w-4 h-4 mr-2" />
-                                                Create Zone
-                                            </>
+                                    {/* Location */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="location">Location</Label>
+                                        <Input
+                                            id="location"
+                                            placeholder="e.g., Northern Region, District A"
+                                            value={formData.location}
+                                            onChange={(e) => handleInputChange('location', e.target.value)}
+                                            className={errors.location ? 'border-red-500' : ''}
+                                        />
+                                        {errors.location && (
+                                            <p className="text-sm text-red-600 flex items-center">
+                                                <AlertCircle className="w-3 h-3 mr-1" />
+                                                {errors.location}
+                                            </p>
                                         )}
-                                    </Button>
-                                </div>
-                            </form>
-                        </CardContent>
-                    </Card>
+                                    </div>
+
+                                    {/* Description */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="description">Description</Label>
+                                        <Textarea
+                                            id="description"
+                                            placeholder="Describe the zone's characteristics, climate, soil type, etc."
+                                            value={formData.description}
+                                            onChange={(e) => handleInputChange('description', e.target.value)}
+                                            rows={4}
+                                            className={errors.description ? 'border-red-500' : ''}
+                                        />
+                                        {errors.description && (
+                                            <p className="text-sm text-red-600 flex items-center">
+                                                <AlertCircle className="w-3 h-3 mr-1" />
+                                                {errors.description}
+                                            </p>
+                                        )}
+                                        <p className="text-xs text-gray-500">
+                                            {formData.description.length}/500 characters
+                                        </p>
+                                    </div>
+
+                                    {/* Leader Assignment */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="leader">Zone Leader</Label>
+                                        <Select
+                                            value={formData.leader_id}
+                                            onValueChange={(value) => handleInputChange('leader_id', value)}
+                                        >
+                                            <SelectTrigger className={errors.leader_id ? 'border-red-500' : ''}>
+                                                <SelectValue placeholder="Select a leader (optional)" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">No Leader Assigned</SelectItem>
+                                                {availableLeaders
+                                                    .filter(leader => leader && leader.id && leader.name)
+                                                    .map((leader) => (
+                                                        <SelectItem key={leader.id} value={String(leader.id)}>
+                                                            <div className="flex items-center space-x-2">
+                                                                <User className="w-4 h-4" />
+                                                                <span>{leader.name}</span>
+                                                                <Badge variant="outline" className="text-xs">
+                                                                    {leader.email}
+                                                                </Badge>
+                                                            </div>
+                                                        </SelectItem>
+                                                    ))}
+                                                {availableLeaders.filter(leader => leader && leader.id && leader.name).length === 0 && (
+                                                    <SelectItem value="none" disabled>
+                                                        No available leaders
+                                                    </SelectItem>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.leader_id && (
+                                            <p className="text-sm text-red-600 flex items-center">
+                                                <AlertCircle className="w-3 h-3 mr-1" />
+                                                {errors.leader_id}
+                                            </p>
+                                        )}
+                                        {availableLeaders.length === 0 && (
+                                            <p className="text-sm text-yellow-600 flex items-center">
+                                                <AlertCircle className="w-3 h-3 mr-1" />
+                                                No available leaders found. You can assign a leader later.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Status */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="status">Status</Label>
+                                        <Select
+                                            value={formData.status}
+                                            onValueChange={(value) => handleInputChange('status', value)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="active">
+                                                    <div className="flex items-center space-x-2">
+                                                        <CheckCircle className="w-4 h-4 text-green-600" />
+                                                        <span>Active</span>
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="inactive">
+                                                    <div className="flex items-center space-x-2">
+                                                        <X className="w-4 h-4 text-red-600" />
+                                                        <span>Inactive</span>
+                                                    </div>
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-gray-500">
+                                            Active zones can be assigned units and members
+                                        </p>
+                                    </div>
+
+                                    {/* Form Actions */}
+                                    <div className="flex items-center justify-end space-x-4 pt-6 border-t">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => router.visit('/koabiga/admin/zones')}
+                                            disabled={isSubmitting}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            type="submit"
+                                            className="bg-emerald-600 hover:bg-emerald-700"
+                                            disabled={isSubmitting}
+                                        >
+                                            {isSubmitting ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                                    Creating...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="w-4 h-4 mr-2" />
+                                                    Create Zone
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 } 

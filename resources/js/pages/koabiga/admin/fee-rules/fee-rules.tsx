@@ -1,13 +1,12 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, CalendarClock, Eye, Play, Clock, Settings } from 'lucide-react';
+import { Plus, Edit, Trash2, CalendarClock, Eye, Play, Clock, Settings, Square } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import axios from '@/lib/axios';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -37,6 +36,11 @@ interface FeeStats {
     pending_applications: number;
     overdue_applications: number;
     paid_applications: number;
+}
+
+interface FeeRulesProps {
+    feeRules: FeeRule[];
+    stats: FeeStats;
 }
 
 const getStatusBadge = (status: string) => {
@@ -71,114 +75,48 @@ const getTypeBadge = (type: string) => {
     }
 };
 
-export default function FeeRulesList() {
-    const [feeRules, setFeeRules] = useState<FeeRule[]>([]);
-    const [stats, setStats] = useState<FeeStats | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+export default function FeeRulesList({ feeRules, stats }: FeeRulesProps) {
     const [search, setSearch] = useState('');
     const [status, setStatus] = useState('all');
-    const [pagination, setPagination] = useState({
-        current_page: 1,
-        last_page: 1,
-        per_page: 15,
-        total: 0,
-    });
 
-    const fetchFeeRules = async () => {
-        try {
-            setLoading(true);
-            const params = new URLSearchParams({
-                page: pagination.current_page.toString(),
-                per_page: pagination.per_page.toString(),
+    const handleApplyFeeRule = (feeRuleId: number) => {
+        if (confirm('Are you sure you want to apply this fee rule to all applicable users?')) {
+            router.post(`/koabiga/admin/fee-rules/${feeRuleId}/apply`, {}, {
+                onSuccess: () => {
+                    // The page will be refreshed with updated data
+                },
+                onError: (errors) => {
+                    console.error('Error applying fee rule:', errors);
+                }
             });
-
-            if (status !== 'all') params.append('status', status);
-            if (search) params.append('search', search);
-
-            const response = await axios.get(`/api/admin/fee-rules?${params}`);
-            
-            if (response.data.success) {
-                setFeeRules(response.data.data);
-                setPagination(response.data.pagination);
-            } else {
-                setError('Failed to fetch fee rules');
-            }
-        } catch (err) {
-            setError('Failed to fetch fee rules');
-            console.error('Error fetching fee rules:', err);
-        } finally {
-            setLoading(false);
         }
     };
 
-    const fetchStats = async () => {
-        try {
-            const response = await axios.get('/api/admin/fee-rules/statistics');
-            if (response.data.success) {
-                setStats(response.data.data);
-            }
-        } catch (err) {
-            console.error('Error fetching stats:', err);
+    const handleStopFeeRule = (feeRuleId: number) => {
+        if (confirm('Are you sure you want to stop this fee rule? This will deactivate it and prevent new applications.')) {
+            router.put(`/koabiga/admin/fee-rules/${feeRuleId}`, {
+                status: 'inactive'
+            }, {
+                onSuccess: () => {
+                    // The page will be refreshed with updated data
+                },
+                onError: (errors) => {
+                    console.error('Error stopping fee rule:', errors);
+                }
+            });
         }
     };
 
-    useEffect(() => {
-        fetchFeeRules();
-        fetchStats();
-    }, [pagination.current_page, status, search]);
-
-    const handleApplyFeeRule = async (feeRuleId: number) => {
-        try {
-            console.log('Applying fee rule:', feeRuleId);
-            const response = await axios.post(`/api/admin/fee-rules/${feeRuleId}/apply`);
-            console.log('Fee rule application response:', response.data);
-            
-            if (response.data.success) {
-                alert(`Fee rule applied successfully! ${response.data.data.applied_count} applications created.`);
-                fetchFeeRules();
-                fetchStats();
-            } else {
-                alert(`Failed to apply fee rule: ${response.data.message}`);
-            }
-        } catch (err: any) {
-            console.error('Error applying fee rule:', err);
-            console.error('Error response:', err.response?.data);
-            console.error('Error status:', err.response?.status);
-            
-            let errorMessage = 'Failed to apply fee rule';
-            
-            if (err.response?.status === 401) {
-                errorMessage = 'Authentication failed. Please log in again.';
-            } else if (err.response?.status === 403) {
-                errorMessage = 'You do not have permission to apply fee rules.';
-            } else if (err.response?.status === 404) {
-                errorMessage = 'Fee rule not found.';
-            } else if (err.response?.status === 500) {
-                errorMessage = `Server error: ${err.response?.data?.message || 'Unknown error'}`;
-            } else if (err.response?.data?.message) {
-                errorMessage = err.response.data.message;
-            }
-            
-            alert(errorMessage);
-        }
-    };
-
-    const handleDeleteFeeRule = async (feeRuleId: number) => {
-        if (!confirm('Are you sure you want to delete this fee rule?')) return;
-
-        try {
-            const response = await axios.delete(`/api/admin/fee-rules/${feeRuleId}`);
-            if (response.data.success) {
-                alert('Fee rule deleted successfully!');
-                fetchFeeRules();
-                fetchStats();
-            } else {
-                alert('Failed to delete fee rule');
-            }
-        } catch (err) {
-            alert('Failed to delete fee rule');
-            console.error('Error deleting fee rule:', err);
+    const handleDeleteFeeRule = (feeRuleId: number) => {
+        if (confirm('Are you sure you want to delete this fee rule?')) {
+            router.delete(`/koabiga/admin/fee-rules/${feeRuleId}`, {
+                onSuccess: () => {
+                    // The page will be refreshed with updated data
+                },
+                onError: (errors) => {
+                    console.error('Error deleting fee rule:', errors);
+                }
+            });
         }
     };
 
@@ -186,20 +124,6 @@ export default function FeeRulesList() {
         (status === 'all' || rule.status.toLowerCase() === status) &&
         (rule.name.toLowerCase().includes(search.toLowerCase()) || rule.type.toLowerCase().includes(search.toLowerCase()))
     );
-
-    if (loading && feeRules.length === 0) {
-        return (
-            <AppLayout breadcrumbs={[
-                { title: 'Admin Dashboard', href: '/koabiga/admin/dashboard' },
-                { title: 'Fee Rules', href: '/koabiga/admin/fee-rules' },
-            ]}>
-                <Head title="Fee Rules - Koabiga Admin" />
-                <div className="flex flex-col gap-6 p-6">
-                    <div className="text-center">Loading fee rules...</div>
-                </div>
-            </AppLayout>
-        );
-    }
 
     return (
         <AppLayout breadcrumbs={[
@@ -277,7 +201,7 @@ export default function FeeRulesList() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Link href="/koabiga/admin/fee-rules/create-fee">
+                    <Link href="/koabiga/admin/fee-rules/create">
                         <Button variant="default" className="bg-green-700 hover:bg-green-800">
                             <Plus className="h-4 w-4 mr-2" />
                             Add Fee Rule
@@ -292,12 +216,6 @@ export default function FeeRulesList() {
                         <CardDescription>Manage all platform fee rules</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6">
-                        {error && (
-                            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                                {error}
-                            </div>
-                        )}
-                        
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-green-200 dark:divide-green-800">
                                 <thead className="bg-green-50 dark:bg-green-900/10">
@@ -315,7 +233,7 @@ export default function FeeRulesList() {
                                     {filteredRules.length === 0 ? (
                                         <tr>
                                             <td colSpan={7} className="text-center py-6 text-green-700 dark:text-green-300">
-                                                {loading ? 'Loading...' : 'No fee rules found.'}
+                                                {feeRules.length === 0 ? 'No fee rules found.' : 'No fee rules match your filters.'}
                                             </td>
                                         </tr>
                                     ) : (
@@ -323,7 +241,7 @@ export default function FeeRulesList() {
                                             <tr key={rule.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
                                                 <td className="p-4 font-medium text-green-900 dark:text-green-100 text-sm">{rule.name}</td>
                                                 <td className="p-4">{getTypeBadge(rule.type)}</td>
-                                                <td className="p-4 text-green-700 dark:text-green-300 text-sm">{rule.amount} RWF</td>
+                                                <td className="p-4 text-green-700 dark:text-green-300 text-sm">{parseInt(rule.amount).toLocaleString()} RWF</td>
                                                 <td className="p-4 text-green-700 dark:text-green-300 text-sm">{rule.frequency}</td>
                                                 <td className="p-4">{getStatusBadge(rule.status)}</td>
                                                 <td className="p-4 text-green-700 dark:text-green-300 text-sm">
@@ -342,14 +260,25 @@ export default function FeeRulesList() {
                                                             </Button>
                                                         </Link>
                                                         {rule.status === 'active' && (
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="sm"
-                                                                onClick={() => handleApplyFeeRule(rule.id)}
-                                                                title="Apply to users"
-                                                            >
-                                                                <Play className="h-4 w-4" />
-                                                            </Button>
+                                                            <>
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="sm"
+                                                                    onClick={() => handleApplyFeeRule(rule.id)}
+                                                                    title="Apply to users"
+                                                                >
+                                                                    <Play className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="sm"
+                                                                    onClick={() => handleStopFeeRule(rule.id)}
+                                                                    title="Stop fee rule"
+                                                                    className="text-orange-600 hover:text-orange-700"
+                                                                >
+                                                                    <Square className="h-4 w-4" />
+                                                                </Button>
+                                                            </>
                                                         )}
                                                         <Button 
                                                             variant="ghost" 
@@ -367,33 +296,6 @@ export default function FeeRulesList() {
                                 </tbody>
                             </table>
                         </div>
-
-                        {/* Pagination */}
-                        {pagination.last_page > 1 && (
-                            <div className="flex justify-between items-center mt-4">
-                                <div className="text-sm text-gray-600">
-                                    Showing {((pagination.current_page - 1) * pagination.per_page) + 1} to {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total} results
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={pagination.current_page === 1}
-                                        onClick={() => setPagination(prev => ({ ...prev, current_page: prev.current_page - 1 }))}
-                                    >
-                                        Previous
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={pagination.current_page === pagination.last_page}
-                                        onClick={() => setPagination(prev => ({ ...prev, current_page: prev.current_page + 1 }))}
-                                    >
-                                        Next
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
             </div>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Unit;
 use App\Models\Zone;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -150,7 +151,10 @@ class MemberController extends Controller
             $validated['unit_id'] = $request->unit_id;
         }
 
-        User::create($validated);
+        $member = User::create($validated);
+
+        // Log the member creation
+        ActivityLogService::logMemberCreation($member);
 
         return redirect()->route('koabiga.admin.members.index')
             ->with('success', 'Member created successfully.');
@@ -210,6 +214,9 @@ class MemberController extends Controller
 
         $member->update($validated);
 
+        // Log the member update
+        ActivityLogService::logMemberUpdate($member);
+
         return redirect()->route('koabiga.admin.members.index')
             ->with('success', 'Member updated successfully.');
     }
@@ -217,7 +224,17 @@ class MemberController extends Controller
     public function destroy($id)
     {
         $member = User::findOrFail($id);
+        $memberName = $member->christian_name . ' ' . $member->family_name;
+        $memberId = $member->id;
+        
         $member->delete();
+
+        // Log the member deletion
+        ActivityLogService::log('delete', "Member '{$memberName}' deleted", [
+            'member_id' => $memberId,
+            'member_name' => $memberName,
+            'deleted_at' => now()->toISOString(),
+        ]);
 
         return redirect()->route('koabiga.admin.members.index')
             ->with('success', 'Member deleted successfully.');
