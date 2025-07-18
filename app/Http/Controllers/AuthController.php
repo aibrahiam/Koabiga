@@ -84,7 +84,7 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
-
+        
         return redirect()->intended('/koabiga/leaders/dashboard');
     }
 
@@ -122,7 +122,7 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
-
+        
         return redirect()->intended('/koabiga/members/dashboard');
     }
 
@@ -171,7 +171,7 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
-
+        
         // Redirect based on role
         if ($user->isAdmin()) {
             return redirect()->intended('/koabiga/admin/dashboard');
@@ -205,7 +205,7 @@ class AuthController extends Controller
         ]);
 
         $user = Auth::user();
-
+        
         // Verify current password
         if (!PasswordHelper::verifyPassword($request->current_password, $user->password)) {
             throw ValidationException::withMessages([
@@ -236,7 +236,7 @@ class AuthController extends Controller
         ]);
 
         $user = Auth::user();
-
+        
         // Only allow PIN updates for phone login users
         if (!PasswordHelper::canUsePhoneLogin($user->role)) {
             throw ValidationException::withMessages([

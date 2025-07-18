@@ -16,35 +16,42 @@ import {
 } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 
-export default function ViewUnit() {
-    // Mock data - replace with API call in production
-    const unit = {
-        id: 1,
-        name: 'Unit A',
-        code: 'UA001',
-        leader: 'Sarah Smith',
-        leaderPhone: '0723456789',
-        leaderId: 'ID001',
-        leaderFamilyName: 'Smith',
-        leaderChristianName: 'Sarah',
-        totalMembers: 12,
-        totalLand: 180,
-        status: 'active',
-        location: 'North Region',
-        establishedDate: '2024-01-15',
-        performance: 85,
-        avatar: null,
-        description: 'A highly productive agricultural unit specializing in maize and bean cultivation.',
-        zone: 'North Zone',
-        crops: ['Maize', 'Beans', 'Potatoes'],
-        equipment: ['Tractor', 'Irrigation System', 'Storage Facility'],
-        achievements: [
-            'Best performing unit 2023',
-            'Exceeded production targets by 15%',
-            'Zero safety incidents'
-        ]
+interface Unit {
+    id: number;
+    name: string;
+    code: string;
+    zone_id: number;
+    leader_id?: number;
+    status: 'active' | 'inactive';
+    created_at: string;
+    updated_at: string;
+    zone: {
+        id: number;
+        name: string;
+        code: string;
     };
+    leader?: {
+        id: number;
+        christian_name: string;
+        family_name: string;
+        phone: string;
+        secondary_phone?: string;
+    };
+    members?: Array<{
+        id: number;
+        christian_name: string;
+        family_name: string;
+        phone: string;
+        status: string;
+        landArea?: number; // Added for total land calculation
+    }>;
+}
 
+interface ViewUnitProps {
+    unit: Unit;
+}
+
+export default function ViewUnit({ unit }: ViewUnitProps) {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'active':
@@ -70,6 +77,12 @@ export default function ViewUnit() {
         }
     };
 
+    // Calculate derived data
+    const totalMembers = unit.members?.length || 0;
+    const activeMembers = unit.members?.filter(m => m.status === 'active').length || 0;
+    const totalLand = unit.members?.reduce((sum, m) => sum + (m.landArea || 0), 0) || 0;
+    const performance = totalMembers > 0 ? Math.round((activeMembers / totalMembers) * 100) : 0;
+
     return (
         <AppLayout breadcrumbs={[
             { title: 'Admin Dashboard', href: '/koabiga/admin/dashboard' },
@@ -90,11 +103,11 @@ export default function ViewUnit() {
                         </Link>
                         <div>
                             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{unit.name}</h1>
-                            <p className="text-gray-600 dark:text-gray-400">Unit Code: {unit.code}</p>
+                            <p className="text-gray-600 dark:text-gray-400">Unit Code: {unit.code} • Zone: {unit.zone.name}</p>
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <Link href={`/koabiga/admin/units/${unit.id}/edit`}>
+                        <Link href={`/koabiga/admin/units/${unit.id}/edit-unit`}>
                             <Button className="flex items-center gap-2">
                                 <Edit className="h-4 w-4" />
                                 Edit Unit
@@ -117,19 +130,19 @@ export default function ViewUnit() {
                             <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{unit.totalMembers}</div>
-                            <p className="text-xs text-muted-foreground">Active members</p>
+                            <div className="text-2xl font-bold">{totalMembers}</div>
+                            <p className="text-xs text-muted-foreground">All members</p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Land Area</CardTitle>
-                            <MapPin className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <CardTitle className="text-sm font-medium">Active Members</CardTitle>
+                            <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{unit.totalLand} ha</div>
-                            <p className="text-xs text-muted-foreground">Under cultivation</p>
+                            <div className="text-2xl font-bold">{activeMembers}</div>
+                            <p className="text-xs text-muted-foreground">Currently active</p>
                         </CardContent>
                     </Card>
 
@@ -139,7 +152,7 @@ export default function ViewUnit() {
                             <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{unit.performance}%</div>
+                            <div className="text-2xl font-bold">{performance}%</div>
                             <p className="text-xs text-muted-foreground">Efficiency rating</p>
                         </CardContent>
                     </Card>
@@ -168,7 +181,6 @@ export default function ViewUnit() {
                         <CardContent className="space-y-4">
                             <div className="flex items-center space-x-3">
                                 <Avatar>
-                                    <AvatarImage src={unit.avatar || undefined} />
                                     <AvatarFallback>
                                         {unit.name.split(' ').map(n => n[0]).join('')}
                                     </AvatarFallback>
@@ -182,21 +194,21 @@ export default function ViewUnit() {
                             <div className="grid gap-3">
                                 <div className="flex justify-between">
                                     <span className="text-sm font-medium">Zone:</span>
-                                    <span className="text-sm">{unit.zone}</span>
+                                    <span className="text-sm">{unit.zone.name}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Location:</span>
-                                    <span className="text-sm">{unit.location}</span>
+                                    <span className="text-sm font-medium">Status:</span>
+                                    <span className="text-sm">{getStatusBadge(unit.status)}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Established:</span>
-                                    <span className="text-sm">{unit.establishedDate}</span>
+                                    <span className="text-sm font-medium">Created:</span>
+                                    <span className="text-sm">{new Date(unit.created_at).toLocaleDateString()}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-sm font-medium">Performance:</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm">{unit.performance}%</span>
-                                        {getPerformanceBadge(unit.performance)}
+                                        <span className="text-sm">{performance}%</span>
+                                        {getPerformanceBadge(performance)}
                                     </div>
                                 </div>
                             </div>
@@ -209,91 +221,115 @@ export default function ViewUnit() {
                             <CardTitle>Unit Leader</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            {unit.leader ? (
+                                <>
+                                    <div className="flex items-center space-x-3">
+                                        <Avatar>
+                                            <AvatarFallback>
+                                                {unit.leader.christian_name.split(' ').map(n => n[0]).join('')}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <div className="font-medium">{unit.leader.christian_name} {unit.leader.family_name}</div>
+                                            <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                                <Phone className="h-3 w-3" />
+                                                {unit.leader.phone}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid gap-3">
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium">ID:</span>
+                                            <span className="text-sm">{unit.leader.id}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium">Christian Name:</span>
+                                            <span className="text-sm">{unit.leader.christian_name}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-sm font-medium">Family Name:</span>
+                                            <span className="text-sm">{unit.leader.family_name}</span>
+                                        </div>
+                                        {unit.leader.secondary_phone && (
+                                            <div className="flex justify-between">
+                                                <span className="text-sm font-medium">Secondary Phone:</span>
+                                                <span className="text-sm">{unit.leader.secondary_phone}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="text-center py-4">
+                                    <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                    <p className="text-gray-500">No leader assigned to this unit</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Unit Members Summary */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Unit Members</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">Total Members:</span>
+                                <span className="text-sm font-bold">{totalMembers}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">Active Members:</span>
+                                <span className="text-sm">{activeMembers}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">Inactive Members:</span>
+                                <span className="text-sm">{totalMembers - activeMembers}</span>
+                            </div>
+                            {totalMembers > 0 && (
+                                <div className="pt-4">
+                                    <Link href={`/koabiga/admin/units/${unit.id}/members`}>
+                                        <Button variant="outline" className="w-full">
+                                            <Users className="h-4 w-4 mr-2" />
+                                            View All Members
+                                        </Button>
+                                    </Link>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Unit Zone Information */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Zone Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
                             <div className="flex items-center space-x-3">
                                 <Avatar>
-                                    <AvatarFallback>
-                                        {unit.leader.split(' ').map(n => n[0]).join('')}
+                                    <AvatarFallback className="bg-blue-100 text-blue-800">
+                                        {unit.zone.name.split(' ').map(n => n[0]).join('')}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <div className="font-medium">{unit.leader}</div>
-                                    <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                        <Phone className="h-3 w-3" />
-                                        {unit.leaderPhone}
-                                    </div>
+                                    <div className="font-medium">{unit.zone.name}</div>
+                                    <div className="text-sm text-muted-foreground">{unit.zone.code}</div>
                                 </div>
                             </div>
                             
                             <div className="grid gap-3">
                                 <div className="flex justify-between">
-                                    <span className="text-sm font-medium">ID:</span>
-                                    <span className="text-sm">{unit.leaderId}</span>
+                                    <span className="text-sm font-medium">Zone ID:</span>
+                                    <span className="text-sm">{unit.zone.id}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Christian Name:</span>
-                                    <span className="text-sm">{unit.leaderChristianName}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm font-medium">Family Name:</span>
-                                    <span className="text-sm">{unit.leaderFamilyName}</span>
+                                    <span className="text-sm font-medium">Zone Code:</span>
+                                    <span className="text-sm">{unit.zone.code}</span>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Crops & Equipment */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Crops & Equipment</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <h4 className="font-medium mb-2">Crops Cultivated</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {unit.crops.map((crop, index) => (
-                                        <Badge key={index} variant="outline">{crop}</Badge>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <h4 className="font-medium mb-2">Equipment Available</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {unit.equipment.map((item, index) => (
-                                        <Badge key={index} variant="secondary">{item}</Badge>
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Achievements */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Achievements</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ul className="space-y-2">
-                                {unit.achievements.map((achievement, index) => (
-                                    <li key={index} className="flex items-start gap-2">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                                        <span className="text-sm">{achievement}</span>
-                                    </li>
-                                ))}
-                            </ul>
                         </CardContent>
                     </Card>
                 </div>
-
-                {/* Description */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Description</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{unit.description}</p>
-                    </CardContent>
-                </Card>
             </div>
         </AppLayout>
     );

@@ -37,7 +37,6 @@ import {
 } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import AppLayout from '@/layouts/app-layout';
-import UnitForm from '@/components/units/UnitForm';
 
 interface Unit {
     id: number;
@@ -88,8 +87,6 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
     
     const [search, setSearch] = useState('');
     const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
     const [deletingUnit, setDeletingUnit] = useState<Unit | null>(null);
     const [sortField, setSortField] = useState<keyof Unit>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -143,38 +140,6 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
         }
     };
 
-    const handleCreate = async (data: any) => {
-        try {
-            await router.post('/koabiga/admin/units', data, {
-                onSuccess: () => {
-                    setIsCreateModalOpen(false);
-                },
-                onError: (errors) => {
-                    console.error('Error creating unit:', errors);
-                }
-            });
-        } catch (error) {
-            console.error('Error creating unit:', error);
-        }
-    };
-
-    const handleUpdate = async (data: any) => {
-        if (!editingUnit) return;
-
-        try {
-            await router.put(`/koabiga/admin/units/${editingUnit.id}`, data, {
-                onSuccess: () => {
-                    setEditingUnit(null);
-                },
-                onError: (errors) => {
-                    console.error('Error updating unit:', errors);
-                }
-            });
-        } catch (error) {
-            console.error('Error updating unit:', error);
-        }
-    };
-
     const handleDelete = async () => {
         if (!deletingUnit) return;
 
@@ -220,7 +185,7 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
                         </p>
                     </div>
                     <Button 
-                        onClick={() => setIsCreateModalOpen(true)}
+                        onClick={() => router.visit('/koabiga/admin/units/create')}
                         className="flex items-center gap-2"
                     >
                         <Plus className="w-4 h-4" />
@@ -448,7 +413,7 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => setEditingUnit(unit)}
+                                                            onClick={() => router.visit(`/koabiga/admin/units/${unit.id}/edit-unit`)}
                                                             className="h-8 w-8 p-0 text-green-600 hover:text-green-800 hover:bg-green-50"
                                                             title="Edit Unit"
                                                         >
@@ -500,7 +465,7 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
                                                     <Eye className="w-4 h-4 mr-2" />
                                                     View
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => setEditingUnit(unit)}>
+                                                <DropdownMenuItem onClick={() => router.visit(`/koabiga/admin/units/${unit.id}/edit-unit`)}>
                                                     <Edit className="w-4 h-4 mr-2" />
                                                     Edit
                                                 </DropdownMenuItem>
@@ -564,44 +529,7 @@ export default function UnitsManagement({ units, zones, leaders }: UnitsManageme
                     </div>
                 )}
 
-                {/* Create Unit Modal */}
-                <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                    <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Create New Unit</DialogTitle>
-                            <DialogDescription>
-                                Add a new agricultural unit to the platform
-                            </DialogDescription>
-                        </DialogHeader>
-                        <UnitForm
-                            zones={zones}
-                            leaders={leaders}
-                            onSubmit={handleCreate}
-                            onCancel={() => setIsCreateModalOpen(false)}
-                        />
-                    </DialogContent>
-                </Dialog>
 
-                {/* Edit Unit Modal */}
-                <Dialog open={!!editingUnit} onOpenChange={() => setEditingUnit(null)}>
-                    <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Edit Unit</DialogTitle>
-                            <DialogDescription>
-                                Update unit information and assignments
-                            </DialogDescription>
-                        </DialogHeader>
-                        {editingUnit && (
-                            <UnitForm
-                                unit={editingUnit}
-                                zones={zones}
-                                leaders={leaders}
-                                onSubmit={handleUpdate}
-                                onCancel={() => setEditingUnit(null)}
-                            />
-                        )}
-                    </DialogContent>
-                </Dialog>
 
                 {/* Delete Confirmation Modal */}
                 <Dialog open={!!deletingUnit} onOpenChange={() => setDeletingUnit(null)}>

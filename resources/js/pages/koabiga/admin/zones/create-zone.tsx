@@ -115,9 +115,9 @@ export default function CreateZone({ availableLeaders = [] }: CreateZoneProps) {
         <>
             <Head title="Create Zone - Koabiga Admin" />
             
-            <div className="space-y-6">
+            <div className="min-h-screen flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-6 border-b">
                     <div className="flex items-center space-x-4">
                         <Button
                             variant="outline"
@@ -136,17 +136,18 @@ export default function CreateZone({ availableLeaders = [] }: CreateZoneProps) {
                     </div>
                 </div>
 
-                {/* Form */}
-                <div className="max-w-2xl">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center space-x-2">
-                                <MapPin className="w-5 h-5 text-emerald-600" />
-                                <span>Zone Information</span>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Centered Form Container */}
+                <div className="flex-1 flex items-center justify-center p-6">
+                    <div className="w-full max-w-2xl">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center space-x-2">
+                                    <MapPin className="w-5 h-5 text-emerald-600" />
+                                    <span>Zone Information</span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <form onSubmit={handleSubmit} className="space-y-6">
                                 {/* Basic Information */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">

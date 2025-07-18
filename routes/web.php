@@ -38,6 +38,9 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
     
     // Members Management (handled by resource routes below)
     
+    // Generate unit code (must come before resource route)
+    Route::post('units/generate-code', [\App\Http\Controllers\UnitController::class, 'generateCode'])->name('units.generate-code');
+    
     // Units Management
     Route::resource('units', \App\Http\Controllers\UnitController::class)->names([
         'index' => 'units.index',
@@ -51,17 +54,7 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
 
 
 
-    Route::get('units/{id}/members', function ($id) {
-        return Inertia::render('koabiga/admin/units/[id]/members', [
-            'unitId' => $id,
-            'unit' => [
-                'id' => $id,
-                'name' => 'Unit ' . $id,
-                'code' => 'U' . str_pad($id, 3, '0', STR_PAD_LEFT),
-                'leader' => 'Unit Leader ' . $id,
-            ]
-        ]);
-    })->name('units.members');
+    Route::get('units/{unit}/members', [\App\Http\Controllers\UnitController::class, 'members'])->name('units.members');
     
     // Reports Management
     Route::get('reports', function () {

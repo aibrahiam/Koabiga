@@ -17,112 +17,50 @@ import AppLayout from '@/layouts/app-layout';
 import { useState } from 'react';
 
 interface Unit {
-    id: string | number;
+    id: number;
     name: string;
     code: string;
-    leader: string;
+    zone: {
+        id: number;
+        name: string;
+        code: string;
+    };
+    leader?: {
+        id: number;
+        christian_name: string;
+        family_name: string;
+        phone: string;
+        secondary_phone?: string;
+    };
 }
 
 interface Member {
     id: number;
-    christianName: string;
-    familyName: string;
+    christian_name: string;
+    family_name: string;
     phone: string;
-    role: string;
+    secondary_phone?: string;
     status: string;
-    joinDate: string;
-    landArea: number;
-    crops: string[];
-    avatar: string | null;
+    created_at: string;
+    land_area?: number;
+    crops?: string[];
 }
 
-interface Props {
-    unitId?: number;
-    unit?: Unit;
+interface UnitMembersProps {
+    unit: Unit;
+    members: Member[];
 }
 
-export default function UnitMembers({ unitId, unit }: Props) {
-    // Use the unit data from props, with fallback
-    const currentUnit = unit || {
-        id: unitId || 1,
-        name: 'Unit A',
-        code: 'UA001',
-        leader: 'Sarah Smith',
-    };
-
-    // Mock data - replace with API call in production
-    const members: Member[] = [
-        {
-            id: 1,
-            christianName: 'John',
-            familyName: 'Doe',
-            phone: '0712345678',
-            role: 'Farmer',
-            status: 'active',
-            joinDate: '2024-01-15',
-            landArea: 15,
-            crops: ['Maize', 'Beans'],
-            avatar: null,
-        },
-        {
-            id: 2,
-            christianName: 'Jane',
-            familyName: 'Smith',
-            phone: '0723456789',
-            role: 'Farmer',
-            status: 'active',
-            joinDate: '2024-02-01',
-            landArea: 20,
-            crops: ['Potatoes', 'Tomatoes'],
-            avatar: null,
-        },
-        {
-            id: 3,
-            christianName: 'Mike',
-            familyName: 'Johnson',
-            phone: '0734567890',
-            role: 'Farmer',
-            status: 'inactive',
-            joinDate: '2024-01-20',
-            landArea: 12,
-            crops: ['Wheat'],
-            avatar: null,
-        },
-        {
-            id: 4,
-            christianName: 'Emily',
-            familyName: 'Davis',
-            phone: '0745678901',
-            role: 'Farmer',
-            status: 'active',
-            joinDate: '2024-03-10',
-            landArea: 18,
-            crops: ['Maize', 'Soybeans'],
-            avatar: null,
-        },
-        {
-            id: 5,
-            christianName: 'David',
-            familyName: 'Wilson',
-            phone: '0756789012',
-            role: 'Farmer',
-            status: 'active',
-            joinDate: '2024-02-15',
-            landArea: 25,
-            crops: ['Coffee', 'Tea'],
-            avatar: null,
-        },
-    ];
-
+export default function UnitMembers({ unit, members }: UnitMembersProps) {
     const [search, setSearch] = useState('');
 
     const filteredMembers = members.filter(member => {
         const searchLower = search.toLowerCase();
         return (
-            member.christianName.toLowerCase().includes(searchLower) ||
-            member.familyName.toLowerCase().includes(searchLower) ||
+            member.christian_name.toLowerCase().includes(searchLower) ||
+            member.family_name.toLowerCase().includes(searchLower) ||
             member.phone.includes(searchLower) ||
-            member.role.toLowerCase().includes(searchLower)
+            member.status.toLowerCase().includes(searchLower)
         );
     });
 
@@ -139,28 +77,34 @@ export default function UnitMembers({ unitId, unit }: Props) {
         }
     };
 
+    const totalLand = members.reduce((sum, m) => sum + (m.land_area || 0), 0);
+    const avgLandPerMember = members.length > 0 ? Math.round(totalLand / members.length) : 0;
+
     return (
         <AppLayout breadcrumbs={[
             { title: 'Admin Dashboard', href: '/koabiga/admin/dashboard' },
             { title: 'Units', href: '/koabiga/admin/units' },
-            { title: currentUnit.name, href: `/koabiga/admin/units/${currentUnit.id}` },
-            { title: 'Members', href: `/koabiga/admin/units/${currentUnit.id}/members` },
+            { title: unit.name, href: `/koabiga/admin/units/${unit.id}` },
+            { title: 'Members', href: `/koabiga/admin/units/${unit.id}/members` },
         ]}>
-            <Head title={`${currentUnit.name} Members - Koabiga Admin`} />
+            <Head title={`${unit.name} Members - Koabiga Admin`} />
             
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Link href={`/koabiga/admin/units/${currentUnit.id}`}>
+                        <Link href={`/koabiga/admin/units/${unit.id}`}>
                             <Button variant="outline" size="sm">
                                 <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back to Unit
+                                Back to {unit.name}
                             </Button>
                         </Link>
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{currentUnit.name} Members</h1>
-                            <p className="text-gray-600 dark:text-gray-400">Unit Code: {currentUnit.code} • Leader: {currentUnit.leader}</p>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{unit.name} Members</h1>
+                            <p className="text-gray-600 dark:text-gray-400">
+                                Unit Code: {unit.code} • Zone: {unit.zone.name}
+                                {unit.leader && ` • Leader: ${unit.leader.christian_name} ${unit.leader.family_name}`}
+                            </p>
                         </div>
                     </div>
                     <Button className="flex items-center gap-2">
@@ -202,7 +146,7 @@ export default function UnitMembers({ unitId, unit }: Props) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {members.reduce((sum, m) => sum + m.landArea, 0)} ha
+                                {totalLand} ha
                             </div>
                             <p className="text-xs text-muted-foreground">Combined area</p>
                         </CardContent>
@@ -215,7 +159,7 @@ export default function UnitMembers({ unitId, unit }: Props) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {Math.round(members.reduce((sum, m) => sum + m.landArea, 0) / members.length)} ha
+                                {avgLandPerMember} ha
                             </div>
                             <p className="text-xs text-muted-foreground">Per member</p>
                         </CardContent>
@@ -229,7 +173,7 @@ export default function UnitMembers({ unitId, unit }: Props) {
                             <div className="relative flex-1 max-w-sm">
                                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Search members by name, phone, or role..."
+                                    placeholder="Search members by name, phone, or status..."
                                     className="pl-8"
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
@@ -243,7 +187,7 @@ export default function UnitMembers({ unitId, unit }: Props) {
                 <Card>
                     <CardHeader>
                         <CardTitle>Unit Members</CardTitle>
-                        <CardDescription>All members of {currentUnit.name}</CardDescription>
+                        <CardDescription>All members of {unit.name}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="overflow-x-auto">
@@ -252,7 +196,6 @@ export default function UnitMembers({ unitId, unit }: Props) {
                                     <tr className="border-b">
                                         <th className="text-left p-4 font-medium">Member</th>
                                         <th className="text-left p-4 font-medium">Contact</th>
-                                        <th className="text-left p-4 font-medium">Role</th>
                                         <th className="text-left p-4 font-medium">Status</th>
                                         <th className="text-left p-4 font-medium">Land Area</th>
                                         <th className="text-left p-4 font-medium">Crops</th>
@@ -265,13 +208,13 @@ export default function UnitMembers({ unitId, unit }: Props) {
                                             <td className="p-4">
                                                 <div className="flex items-center space-x-3">
                                                     <Avatar>
-                                                        <AvatarImage src={member.avatar || undefined} />
+                                                        <AvatarImage src={undefined} />
                                                         <AvatarFallback>
-                                                            {member.christianName[0]}{member.familyName[0]}
+                                                            {member.christian_name[0]}{member.family_name[0]}
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <div>
-                                                        <div className="font-medium">{member.christianName} {member.familyName}</div>
+                                                        <div className="font-medium">{member.christian_name} {member.family_name}</div>
                                                         <div className="text-sm text-muted-foreground">ID: {member.id}</div>
                                                     </div>
                                                 </div>
@@ -281,29 +224,36 @@ export default function UnitMembers({ unitId, unit }: Props) {
                                                     <Phone className="h-3 w-3" />
                                                     <span className="text-sm">{member.phone}</span>
                                                 </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <span className="text-sm">{member.role}</span>
+                                                {member.secondary_phone && (
+                                                    <div className="flex items-center gap-1 mt-1">
+                                                        <Phone className="h-3 w-3" />
+                                                        <span className="text-sm text-muted-foreground">{member.secondary_phone}</span>
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="p-4">
                                                 {getStatusBadge(member.status)}
                                             </td>
                                             <td className="p-4">
-                                                <span className="text-sm">{member.landArea} ha</span>
+                                                <span className="text-sm">{member.land_area || 0} ha</span>
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex flex-wrap gap-1">
-                                                    {member.crops.map((crop, index) => (
-                                                        <Badge key={index} variant="outline" className="text-xs">
-                                                            {crop}
-                                                        </Badge>
-                                                    ))}
+                                                    {member.crops && member.crops.length > 0 ? (
+                                                        member.crops.map((crop, index) => (
+                                                            <Badge key={index} variant="outline" className="text-xs">
+                                                                {crop}
+                                                            </Badge>
+                                                        ))
+                                                    ) : (
+                                                        <span className="text-sm text-muted-foreground">No crops</span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center gap-1">
                                                     <Calendar className="h-3 w-3" />
-                                                    <span className="text-sm">{member.joinDate}</span>
+                                                    <span className="text-sm">{new Date(member.created_at).toLocaleDateString()}</span>
                                                 </div>
                                             </td>
                                         </tr>
@@ -311,6 +261,15 @@ export default function UnitMembers({ unitId, unit }: Props) {
                                 </tbody>
                             </table>
                         </div>
+                        
+                        {filteredMembers.length === 0 && (
+                            <div className="text-center py-8">
+                                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                                <p className="text-gray-500">
+                                    {search ? 'No members found matching your search.' : 'No members assigned to this unit yet.'}
+                                </p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

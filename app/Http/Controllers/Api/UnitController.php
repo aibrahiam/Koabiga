@@ -9,6 +9,8 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class UnitController extends Controller
 {
@@ -191,5 +193,37 @@ class UnitController extends Controller
             'success' => true,
             'data' => $stats
         ]);
+    }
+
+    public function generateCode(Request $request): JsonResponse
+    {
+        Log::info('Generate code request received', [
+            'zone_id' => $request->zone_id,
+            'user' => $request->user(),
+            'authenticated' => Auth::check()
+        ]);
+
+        $request->validate([
+            'zone_id' => 'required|exists:zones,id',
+        ]);
+
+        try {
+            $code = Unit::generateCode($request->zone_id);
+            
+            Log::info('Code generated successfully', ['code' => $code]);
+            
+            return response()->json([
+                'success' => true,
+                'code' => $code,
+                'message' => 'Unit code generated successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error generating code', ['error' => $e->getMessage()]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
 } 

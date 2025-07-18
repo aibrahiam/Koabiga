@@ -24,10 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        // Remove session middleware from API routes - sessions should be handled by web routes
-        // $middleware->api(append: [
-        //     \Illuminate\Session\Middleware\StartSession::class,
-        // ]);
+        // Add session middleware to API routes that need authentication
+        $middleware->api(append: [
+            \Illuminate\Session\Middleware\StartSession::class,
+        ]);
 
         // Add CORS middleware for development
         $middleware->api(prepend: [

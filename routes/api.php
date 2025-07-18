@@ -113,6 +113,8 @@ Route::post('/test-login', function (Request $request) {
     ]);
 });
 
+
+
 // Admin API Routes (Protected)
 Route::prefix('admin')->middleware(['web', 'auth:web', 'role:admin'])->group(function () {
     // Logout (requires authentication)
@@ -166,6 +168,16 @@ Route::prefix('admin')->middleware(['web', 'auth:web', 'role:admin'])->group(fun
 
     // Leader Member Creation
     Route::post('/members', [UnitLeaderController::class, 'createMember']);
+
+    // Units Management
+    Route::prefix('units')->group(function () {
+        Route::get('/', [UnitController::class, 'index']);
+        Route::post('/', [UnitController::class, 'store']);
+        Route::post('/generate-code', [UnitController::class, 'generateCode']);
+        Route::get('/{id}', [UnitController::class, 'show']);
+        Route::put('/{id}', [UnitController::class, 'update']);
+        Route::delete('/{id}', [UnitController::class, 'destroy']);
+    });
 });
 
 // Member API Routes
