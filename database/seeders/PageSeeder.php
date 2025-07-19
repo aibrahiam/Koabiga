@@ -42,7 +42,7 @@ class PageSeeder extends Seeder
             ],
             [
                 'title' => 'Members',
-                'path' => '/koabiga/admin/members',
+                'path' => '/koabiga/admin/admin-members',
                 'role' => 'admin',
                 'description' => 'Manage all platform members',
                 'icon' => 'Users',
@@ -53,7 +53,7 @@ class PageSeeder extends Seeder
             ],
             [
                 'title' => 'Units',
-                'path' => '/koabiga/admin/units',
+                'path' => '/koabiga/admin/admin-units',
                 'role' => 'admin',
                 'description' => 'Manage agricultural units',
                 'icon' => 'Building2',

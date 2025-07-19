@@ -20,6 +20,8 @@ class User extends Authenticatable
     protected $fillable = [
         'christian_name',
         'family_name',
+        'date_of_birth',
+        'address',
         'email',
         'password',
         'phone',
@@ -55,6 +57,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
         'last_activity_at' => 'datetime',
+        'date_of_birth' => 'date',
     ];
 
     /**
@@ -111,7 +114,9 @@ class User extends Authenticatable
      */
     public static function authenticateByPhone(string $phone, string $pin): ?self
     {
-        $user = self::where('phone', $phone)->first();
+        $user = self::where('phone', $phone)
+                    ->orWhere('secondary_phone', $phone)
+                    ->first();
         
         if (!$user || !PasswordHelper::canUsePhoneLogin($user->role)) {
             return null;
@@ -247,6 +252,43 @@ class User extends Authenticatable
     public function zone()
     {
         return $this->belongsTo(Zone::class);
+    }
+
+    /**
+     * Normalize phone number to 10-digit format
+     * Removes all non-digit characters and ensures 10 digits
+     */
+    public static function normalizePhoneNumber(?string $phone): ?string
+    {
+        if (!$phone) {
+            return null;
+        }
+
+        // Remove all non-digit characters
+        $digits = preg_replace('/[^0-9]/', '', $phone);
+
+        // If it's a Kenyan number starting with +254, convert to 10 digits
+        if (strlen($digits) === 12 && substr($digits, 0, 3) === '254') {
+            return '0' . substr($digits, 3);
+        }
+
+        // If it's already 10 digits, return as is
+        if (strlen($digits) === 10) {
+            return $digits;
+        }
+
+        // If it's 9 digits, add leading 0
+        if (strlen($digits) === 9) {
+            return '0' . $digits;
+        }
+
+        // If it's 11 digits starting with 0, return as is
+        if (strlen($digits) === 11 && substr($digits, 0, 1) === '0') {
+            return $digits;
+        }
+
+        // For any other format, return the digits as is (validation will catch invalid formats)
+        return $digits;
     }
 
     /**

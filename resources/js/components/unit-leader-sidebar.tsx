@@ -11,37 +11,37 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 const unitLeaderNavItems = [
     {
         title: 'Dashboard',
-        href: '/koabiga/unit-leader/dashboard',
+        href: '/koabiga/leaders/dashboard',
         icon: LayoutGrid,
     },
     {
         title: 'Members',
-        href: '/koabiga/unit-leader/leader-members',
+        href: '/koabiga/leaders/leader-members',
         icon: Users,
     },
     {
         title: 'Land Management',
-        href: '/koabiga/unit-leader/land',
+        href: '/koabiga/leaders/land',
         icon: MapPin,
     },
     {
         title: 'Crop Management',
-        href: '/koabiga/unit-leader/crops',
+        href: '/koabiga/leaders/crops',
         icon: Sprout,
     },
     {
         title: 'Produce Tracking',
-        href: '/koabiga/unit-leader/produce',
+        href: '/koabiga/leaders/produce',
         icon: Package,
     },
     {
         title: 'Reports',
-        href: '/koabiga/unit-leader/reports',
+        href: '/koabiga/leaders/reports',
         icon: FileText,
     },
     {
         title: 'Forms',
-        href: '/koabiga/unit-leader/forms',
+        href: '/koabiga/leaders/leaders-forms',
         icon: ClipboardList,
     },
 ];

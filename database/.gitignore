@@ -1,1 +1,19 @@
+# SQLite files
 *.sqlite*
+
+# Database dumps
+*.sql
+*.dump
+
+# Test database files
+*_test.sql
+*_dev.sql
+*_local.sql
+
+# Backup files
+*.backup
+*.bak
+
+# Temporary database files
+*.tmp
+*.temp

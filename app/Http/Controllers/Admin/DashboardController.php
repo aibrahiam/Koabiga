@@ -169,7 +169,7 @@ class DashboardController extends Controller
             'system_health' => $systemHealth,
         ];
 
-        return Inertia::render('koabiga/admin/admin_dashboard', [
+        return Inertia::render('koabiga/admin/admin-dashboard', [
             'systemStats' => $systemStats,
             'dashboardMetrics' => $dashboardMetrics,
             'zoneStats' => $zoneStats,

@@ -16,6 +16,12 @@ class AgricultureSeeder extends Seeder
      */
     public function run(): void
     {
+        // Only seed sample data in development environments
+        if (!app()->environment('local', 'development')) {
+            $this->command->info('Agriculture seeder skipped in production environment.');
+            return;
+        }
+
         // Get some users for seeding
         $users = User::where('role', 'member')->take(5)->get();
         $units = Unit::take(3)->get();

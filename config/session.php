@@ -32,9 +32,9 @@ return [
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120), // 2 hours for development
+    'lifetime' => (int) env('SESSION_LIFETIME', 60), // 1 hour for production
 
-    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false), // Don't expire on browser close for development
+    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', true), // Expire on browser close for security
 
     /*
     |--------------------------------------------------------------------------
@@ -170,7 +170,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE', false),
+    'secure' => env('SESSION_SECURE_COOKIE', true),
 
     /*
     |--------------------------------------------------------------------------

@@ -22,7 +22,7 @@ class DebugLeadersLogin extends Command
         $this->line('');
 
         // Step 1: Normalize phone number
-        $normalizedPhone = $this->normalizePhone($phone);
+        $normalizedPhone = User::normalizePhoneNumber($phone);
         $this->info("Normalized phone: {$normalizedPhone}");
 
         // Step 2: Find user by phone
@@ -89,21 +89,5 @@ class DebugLeadersLogin extends Command
         return 0;
     }
 
-    private function normalizePhone($phone)
-    {
-        // Remove any non-digit characters
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-        
-        // Ensure it starts with 07 and is exactly 10 digits
-        if (strlen($phone) === 10 && substr($phone, 0, 2) === '07') {
-            return $phone;
-        }
-        
-        // If it's 9 digits and starts with 7, add 0
-        if (strlen($phone) === 9 && substr($phone, 0, 1) === '7') {
-            return '0' . $phone;
-        }
-        
-        return $phone;
-    }
+
 } 

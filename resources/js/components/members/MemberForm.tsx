@@ -52,6 +52,8 @@ interface MemberFormProps {
         id: number;
         christian_name: string;
         family_name: string;
+        date_of_birth?: string;
+        address?: string;
         phone: string;
         secondary_phone?: string;
         national_id: string;
@@ -69,6 +71,8 @@ interface MemberFormProps {
 const memberSchema = z.object({
     christian_name: z.string().min(1, 'Christian name is required').max(100, 'Christian name must be less than 100 characters'),
     family_name: z.string().min(1, 'Family name is required').max(100, 'Family name must be less than 100 characters'),
+    date_of_birth: z.string().optional(),
+    address: z.string().optional(),
     phone: z.string().length(10, 'Phone number must be exactly 10 digits').regex(/^\d+$/, 'Phone number must contain only digits'),
     secondary_phone: z.string().length(10, 'Secondary phone number must be exactly 10 digits').regex(/^\d+$/, 'Secondary phone number must contain only digits').optional().or(z.literal('')),
     pin: z.string().length(5, 'PIN must be exactly 5 digits').regex(/^\d+$/, 'PIN must contain only digits'),
@@ -107,6 +111,8 @@ export default function MemberForm({ units, zones, member, onSubmit, isSubmittin
         defaultValues: {
             christian_name: member?.christian_name || '',
             family_name: member?.family_name || '',
+            date_of_birth: member?.date_of_birth || '',
+            address: member?.address || '',
             phone: member?.phone || '',
             secondary_phone: member?.secondary_phone || '',
             pin: '12123', // Default PIN
@@ -263,6 +269,41 @@ export default function MemberForm({ units, zones, member, onSubmit, isSubmittin
                                 <p className="text-sm text-red-600 flex items-center">
                                     <AlertCircle className="w-3 h-3 mr-1" />
                                     {formErrors.family_name?.message || errors?.family_name}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Date of Birth and Address */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="date_of_birth">Date of Birth (Optional)</Label>
+                            <Input
+                                id="date_of_birth"
+                                type="date"
+                                {...register('date_of_birth')}
+                                className={formErrors.date_of_birth || errors?.date_of_birth ? 'border-red-500' : ''}
+                            />
+                            {(formErrors.date_of_birth || errors?.date_of_birth) && (
+                                <p className="text-sm text-red-600 flex items-center">
+                                    <AlertCircle className="w-3 h-3 mr-1" />
+                                    {formErrors.date_of_birth?.message || errors?.date_of_birth}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="address">Address (Optional)</Label>
+                            <Input
+                                id="address"
+                                placeholder="Enter address"
+                                {...register('address')}
+                                className={formErrors.address || errors?.address ? 'border-red-500' : ''}
+                            />
+                            {(formErrors.address || errors?.address) && (
+                                <p className="text-sm text-red-600 flex items-center">
+                                    <AlertCircle className="w-3 h-3 mr-1" />
+                                    {formErrors.address?.message || errors?.address}
                                 </p>
                             )}
                         </div>
@@ -443,8 +484,8 @@ export default function MemberForm({ units, zones, member, onSubmit, isSubmittin
                             </div>
 
                             {watchedZoneId && (
-                                <div className="space-y-2">
-                                    <Label>Assign Units *</Label>
+                                                            <div className="space-y-2">
+                                <Label htmlFor="unit-assignment">Assign Units *</Label>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
                                         {filteredUnits.map((unit) => (
                                             <div key={unit.id} className="flex items-center space-x-2">
@@ -535,7 +576,7 @@ export default function MemberForm({ units, zones, member, onSubmit, isSubmittin
                                                 </SelectItem>
                                             ))}
                                         {filteredUnits.filter(unit => unit && unit.id && unit.name).length === 0 && watchedZoneId && (
-                                            <SelectItem value="" disabled>
+                                            <SelectItem value="no-units-zone" disabled>
                                                 No units available in this zone
                                             </SelectItem>
                                         )}
@@ -574,7 +615,7 @@ export default function MemberForm({ units, zones, member, onSubmit, isSubmittin
                                             </SelectItem>
                                         ))}
                                     {units.filter(unit => unit && unit.id && unit.name).length === 0 && (
-                                        <SelectItem value="" disabled>
+                                        <SelectItem value="no-units" disabled>
                                             No units available
                                         </SelectItem>
                                     )}
@@ -590,7 +631,7 @@ export default function MemberForm({ units, zones, member, onSubmit, isSubmittin
 
                             {selectedUnit && selectedUnit.zone && (
                         <div className="space-y-2">
-                                    <Label>Auto-Assigned Zone</Label>
+                                    <Label htmlFor="auto-zone">Auto-Assigned Zone</Label>
                                     <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
                                         <MapPin className="w-4 h-4 text-green-600" />
                                         <BadgeComponent variant="outline" className="text-sm">

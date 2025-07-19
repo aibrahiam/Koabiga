@@ -151,7 +151,7 @@ The platform uses a role-based authentication system:
 
 ### Admin Pages
 - `/koabiga/admin/dashboard` - Admin overview
-- `/koabiga/admin/members` - Member management
+- `/koabiga/admin/admin-members` - Member management
 - `/koabiga/admin/reports` - Report management
 - `/koabiga/admin/settings` - System settings
 - `/koabiga/admin/forms` - Form management
@@ -213,16 +213,6 @@ npm run types        # Type checking
 php artisan test     # Run PHP tests
 npm run test         # Run JavaScript tests
 ```
-
-## 📊 Mock Data
-
-The platform includes comprehensive mock data for:
-- User accounts and roles
-- Land plots and assignments
-- Crop information and progress
-- Production statistics
-- Reports and submissions
-- System settings
 
 ## 🔒 Security Features
 

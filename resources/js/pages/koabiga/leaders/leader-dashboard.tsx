@@ -197,7 +197,7 @@ export default function UnitLeaderDashboard() {
         { 
             title: 'Forms', 
             icon: FileText, 
-            href: '/koabiga/leaders/forms', 
+            href: '/koabiga/leaders/leaders-forms', 
             color: 'bg-teal-600 dark:bg-teal-500',
             description: 'Access unit forms'
         },
@@ -316,7 +316,7 @@ export default function UnitLeaderDashboard() {
 
                 {/* Add Member Button */}
                 <div className="flex justify-center">
-                    <Link href="/koabiga/leaders/forms/member-creation">
+                    <Link href="/koabiga/leaders/leaders-forms/member-creation">
                         <Button className="flex items-center gap-2">
                             <Plus className="h-4 w-4" />
                             Add New Member
@@ -373,7 +373,7 @@ export default function UnitLeaderDashboard() {
                                             <div className="flex-1 space-y-1">
                                                 <p className="text-sm font-medium">{activity.action}</p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    by {activity.user.christian_name} {activity.user.family_name} • {new Date(activity.created_at).toLocaleDateString()}
+                                                    by {activity.user ? `${activity.user.christian_name} ${activity.user.family_name}` : 'Unknown User'} • {new Date(activity.created_at).toLocaleDateString()}
                                                 </p>
                                             </div>
                                         </div>

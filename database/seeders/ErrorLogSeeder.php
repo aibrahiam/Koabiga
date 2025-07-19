@@ -14,6 +14,12 @@ class ErrorLogSeeder extends Seeder
      */
     public function run(): void
     {
+        // Only seed sample error logs in development environments
+        if (!app()->environment('local', 'development')) {
+            $this->command->info('Error log seeder skipped in production environment.');
+            return;
+        }
+
         $users = User::whereIn('role', ['admin', 'unit_leader', 'zone_leader', 'member'])->get();
         
         if ($users->isEmpty()) {

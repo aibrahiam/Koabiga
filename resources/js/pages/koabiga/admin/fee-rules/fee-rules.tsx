@@ -201,7 +201,7 @@ export default function FeeRulesList({ feeRules, stats }: FeeRulesProps) {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Link href="/koabiga/admin/fee-rules/create">
+                    <Link href="/koabiga/admin/fee-rules/create-fee">
                         <Button variant="default" className="bg-green-700 hover:bg-green-800">
                             <Plus className="h-4 w-4 mr-2" />
                             Add Fee Rule

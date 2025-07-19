@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { clearSessionOnLoginPage } from '@/lib/session-manager';
@@ -36,51 +36,29 @@ export default function Welcome({ status, canResetPin }: WelcomeProps) {
         setSuccessMessage(null);
 
         try {
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            // Use Inertia form submission for better session handling
+            post('/member/login', {
+                onSuccess: () => {
+                    setSuccessMessage('Login successful! Redirecting...');
+                    console.log('Login successful, should redirect automatically');
                 },
-                body: JSON.stringify({
-                    phone: data.phone,
-                    pin: data.pin,
-                    role: 'member',
-                }),
+                onError: (errors) => {
+                    console.error('Login errors:', errors);
+                    if (errors.phone) {
+                        setGeneralError(errors.phone);
+                    } else if (errors.pin) {
+                        setGeneralError(errors.pin);
+                    } else {
+                        setGeneralError('Login failed. Please check your credentials.');
+                    }
+                },
+                onFinish: () => {
+                    setIsLoading(false);
+                }
             });
-
-            const result = await response.json();
-
-            if (response.ok && result.message === 'Login successful' && result.user) {
-                const authUser = {
-                    id: result.user.id,
-                    name: `${result.user.christian_name} ${result.user.family_name}`,
-                    christian_name: result.user.christian_name,
-                    family_name: result.user.family_name,
-                    email: result.user.email,
-                    phone: result.user.phone,
-                    role: result.user.role,
-                    unit_id: result.user.unit_id,
-                    zone_id: result.user.zone_id,
-                };
-
-                // Use unified login function
-                login(authUser);
-                
-                setSuccessMessage('Login successful!');
-                
-                // Redirect to members dashboard
-                setTimeout(() => {
-                    window.location.href = '/koabiga/members/dashboard';
-                }, 1000);
-            } else {
-                setGeneralError(result.message || 'Login failed');
-            }
         } catch (err: any) {
             console.error('Login error:', err);
             setGeneralError('Network error. Please try again.');
-        } finally {
             setIsLoading(false);
         }
     };

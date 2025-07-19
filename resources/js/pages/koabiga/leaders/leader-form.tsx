@@ -38,7 +38,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
     {
         title: 'Forms',
-        href: '/koabiga/leaders/forms',
+        href: '/koabiga/leaders/leaders-forms',
     },
 ];
 
@@ -53,7 +53,7 @@ const unitLeaderForms = [
         icon: UserPlus,
         color: 'bg-blue-100 text-blue-800',
         borderColor: 'border-blue-200',
-        href: '/koabiga/leaders/forms/member-creation'
+        href: '/koabiga/leaders/leaders-forms/member-creation'
     },
     {
         id: 'land-assignment',
@@ -64,7 +64,7 @@ const unitLeaderForms = [
         icon: MapPin,
         color: 'bg-green-100 text-green-800',
         borderColor: 'border-green-200',
-        href: '/koabiga/leaders/forms/land-assignment'
+        href: '/koabiga/leaders/leaders-forms/land-assignment'
     },
     {
         id: 'crop-creation',
@@ -75,7 +75,7 @@ const unitLeaderForms = [
         icon: Sprout,
         color: 'bg-orange-100 text-orange-800',
         borderColor: 'border-orange-200',
-        href: '/koabiga/leaders/forms/crop-creation'
+        href: '/koabiga/leaders/leaders-forms/crop-creation'
     },
     {
         id: 'produce-creation',
@@ -86,7 +86,7 @@ const unitLeaderForms = [
         icon: Package,
         color: 'bg-purple-100 text-purple-800',
         borderColor: 'border-purple-200',
-        href: '/koabiga/leaders/forms/produce-creation'
+        href: '/koabiga/leaders/leaders-forms/produce-creation'
     }
 ];
 
@@ -105,7 +105,7 @@ export default function UnitLeaderForms() {
             setLoading(true);
             setError(null);
             
-            const response = await axios.get('/api/leaders/forms?target_roles=unit_leader&status=active');
+            const response = await axios.get('/api/leaders/leaders-forms?target_roles=unit_leader&status=active');
             
             if (response.data.success) {
                 const formsData = response.data.data;

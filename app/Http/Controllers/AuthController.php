@@ -127,6 +127,113 @@ class AuthController extends Controller
     }
 
     /**
+     * API endpoint for member login (returns JSON)
+     */
+    public function memberLoginApi(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+            'pin' => 'required|string|size:5',
+            'role' => 'required|string|in:member,unit_leader,zone_leader',
+        ]);
+
+        $user = User::authenticateByPhone($request->phone, $request->pin);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The provided credentials are incorrect.',
+            ], 401);
+        }
+
+        if (!$user->isActive()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is not active.',
+            ], 401);
+        }
+
+        // Check if user role matches the requested role
+        if ($user->role !== $request->role) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid role for this login method.',
+            ], 403);
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Login successful',
+            'user' => [
+                'id' => $user->id,
+                'christian_name' => $user->christian_name,
+                'family_name' => $user->family_name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+                'unit_id' => $user->unit_id,
+                'zone_id' => $user->zone_id,
+            ],
+        ]);
+    }
+
+    /**
+     * API endpoint for leaders login (returns JSON)
+     */
+    public function leadersLogin(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+            'pin' => 'required|string|size:5',
+        ]);
+
+        $user = User::authenticateByPhone($request->phone, $request->pin);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The provided credentials are incorrect.',
+            ], 401);
+        }
+
+        if (!$user->isActive()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is not active.',
+            ], 401);
+        }
+
+        // Check if user is a leader
+        if (!in_array($user->role, ['unit_leader', 'zone_leader'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Leader privileges required.',
+            ], 403);
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Login successful',
+            'user' => [
+                'id' => $user->id,
+                'christian_name' => $user->christian_name,
+                'family_name' => $user->family_name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+                'unit_id' => $user->unit_id,
+                'zone_id' => $user->zone_id,
+            ],
+        ]);
+    }
+
+    /**
      * Show general login form (redirects based on role)
      */
     public function showLogin()

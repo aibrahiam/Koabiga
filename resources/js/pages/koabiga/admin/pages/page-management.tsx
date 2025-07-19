@@ -316,7 +316,7 @@ export default function AdminPageManagement({ pages: initialPages, users: initia
             setError(null);
 
             if (editingUser) {
-                await router.put(`/koabiga/admin/members/${editingUser.id}`, editingUser, {
+                await router.put(`/koabiga/admin/admin-members/${editingUser.id}`, editingUser, {
                     onSuccess: () => {
                         setSuccess('User updated successfully');
                         setIsUserEditDialogOpen(false);
@@ -772,7 +772,7 @@ export default function AdminPageManagement({ pages: initialPages, users: initia
                                                                 <Button 
                                                                     variant="ghost" 
                                                                     size="sm"
-                                                                    onClick={() => router.visit(`/koabiga/admin/members/${user.id}/edit`)}
+                                                                    onClick={() => router.visit(`/koabiga/admin/admin-members/${user.id}/edit`)}
                                                                 >
                                                                     <Eye className="h-4 w-4" />
                                                                 </Button>

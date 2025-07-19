@@ -1,6 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { clearSessionOnLoginPage } from '@/lib/session-manager';
 
 type LeadersLoginForm = {
@@ -21,7 +20,6 @@ export default function LeadersLogin({ status, canResetPin }: LeadersLoginProps)
 
     const [generalError, setGeneralError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const { login } = useAuth();
 
     // Auto-clear session on visiting login page
     useEffect(() => {
@@ -33,67 +31,25 @@ export default function LeadersLogin({ status, canResetPin }: LeadersLoginProps)
         setIsLoading(true);
         setGeneralError(null);
 
-        try {
-            console.log('Sending login request:', {
-                phone: data.phone,
-                pin: data.pin,
-                url: '/api/leaders/login'
-            });
-
-            // Get CSRF token
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            console.log('CSRF Token:', csrfToken);
-
-            const response = await fetch('/api/leaders/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify({
-                    phone: data.phone,
-                    pin: data.pin,
-                }),
-            });
-
-            console.log('Response status:', response.status);
-            const result = await response.json();
-            console.log('Response body:', result);
-
-            if (response.ok && result.success && result.user) {
-                console.log('Login successful, user data:', result.user);
-                
-                const authUser = {
-                    id: result.user.id,
-                    name: `${result.user.christian_name} ${result.user.family_name}`,
-                    christian_name: result.user.christian_name,
-                    family_name: result.user.family_name,
-                    email: result.user.email,
-                    phone: result.user.phone,
-                    role: result.user.role,
-                    unit_id: result.user.unit_id,
-                    zone_id: result.user.zone_id,
-                };
-
-                console.log('Processed auth user:', authUser);
-
-                // Use unified login function
-                login(authUser);
-                
-                console.log('User logged in, redirecting...');
-                
-                // Redirect to leaders dashboard
-                window.location.href = '/koabiga/leaders/dashboard';
-            } else {
-                setGeneralError(result.message || 'Login failed');
+        // Use Inertia form submission for better session handling
+        post('/leaders/login', {
+            onSuccess: () => {
+                console.log('Leaders login successful, should redirect automatically');
+            },
+            onError: (errors) => {
+                console.error('Login errors:', errors);
+                if (errors.phone) {
+                    setGeneralError(errors.phone);
+                } else if (errors.pin) {
+                    setGeneralError(errors.pin);
+                } else {
+                    setGeneralError('Login failed. Please check your credentials.');
+                }
+            },
+            onFinish: () => {
+                setIsLoading(false);
             }
-        } catch (err: any) {
-            console.error('Login error:', err);
-            setGeneralError('Network error. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
+        });
     };
 
     return (

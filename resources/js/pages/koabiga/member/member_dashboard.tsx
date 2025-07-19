@@ -11,7 +11,8 @@ import {
     Calendar,
     Users,
     Building2,
-    Loader2
+    Loader2,
+    DollarSign
 } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,6 +37,18 @@ interface DashboardStats {
     upcomingTasks: number;
 }
 
+interface UnitInfo {
+    id: number;
+    name: string;
+    code: string;
+    description?: string;
+    leader?: {
+        id: number;
+        name: string;
+        phone: string;
+    };
+}
+
 interface RecentActivity {
     id: number;
     action: string;
@@ -48,14 +61,18 @@ interface RecentActivity {
 
 interface UpcomingFee {
     id: number;
-    title: string;
-    dueDate: string;
-    amount: number;
-    status: string;
-    fee_rule?: {
+    fee_rule: {
+        id: number;
         name: string;
         type: string;
+        description: string;
     };
+    amount: number;
+    due_date: string;
+    status: string;
+    created_at: string;
+    paid_date?: string;
+    notes?: string;
 }
 
 export default function MemberDashboard() {
@@ -67,6 +84,7 @@ export default function MemberDashboard() {
         pendingReports: 0,
         upcomingTasks: 0,
     });
+    const [unitInfo, setUnitInfo] = useState<UnitInfo | null>(null);
     const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
     const [upcomingFees, setUpcomingFees] = useState<UpcomingFee[]>([]);
     const [loading, setLoading] = useState(true);
@@ -94,9 +112,21 @@ export default function MemberDashboard() {
 
                 // Fetch upcoming fees
                 console.log('Fetching upcoming fees...');
-                const feesResponse = await axios.get('/member/dashboard/upcoming-fees');
+                const feesResponse = await axios.get('/member/fees');
                 if (feesResponse.data.success) {
-                    setUpcomingFees(feesResponse.data.data);
+                    // Get pending and overdue fees for upcoming fees section
+                    const allFees = feesResponse.data.data.fee_applications;
+                    const upcomingFeesData = allFees.filter((fee: any) => 
+                        fee.status === 'pending' || fee.status === 'overdue'
+                    ).slice(0, 5); // Show only first 5
+                    setUpcomingFees(upcomingFeesData);
+                }
+
+                // Fetch unit information
+                console.log('Fetching unit information...');
+                const unitResponse = await axios.get('/member/unit');
+                if (unitResponse.data.success) {
+                    setUnitInfo(unitResponse.data.data);
                 }
 
             } catch (err: any) {
@@ -113,11 +143,12 @@ export default function MemberDashboard() {
     }, []);
 
     const quickActions = [
+        { title: 'Pay All Fees', icon: DollarSign, href: '/koabiga/members/fees', color: 'bg-red-600 dark:bg-red-500' },
+        { title: 'My Fees', icon: DollarSign, href: '/koabiga/members/fees', color: 'bg-green-600 dark:bg-green-500' },
         { title: 'My Land', icon: MapPin, href: '/koabiga/members/land', color: 'bg-green-600 dark:bg-green-500' },
         { title: 'My Crops', icon: Sprout, href: '/koabiga/members/crops', color: 'bg-green-600 dark:bg-green-500' },
         { title: 'My Produce', icon: Package, href: '/koabiga/members/produce', color: 'bg-green-600 dark:bg-green-500' },
         { title: 'My Reports', icon: FileText, href: '/koabiga/members/reports', color: 'bg-green-600 dark:bg-green-500' },
-        { title: 'My Fees', icon: FileText, href: '/koabiga/members/fees', color: 'bg-green-600 dark:bg-green-500' },
     ];
 
     if (loading) {
@@ -165,7 +196,9 @@ export default function MemberDashboard() {
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Member Dashboard</h1>
                     </div>
-                    <Badge variant="secondary" className="text-xs sm:text-sm py-1 px-2 sm:px-3">Member - Unit A</Badge>
+                    <Badge variant="secondary" className="text-xs sm:text-sm py-1 px-2 sm:px-3">
+                        Member - {unitInfo ? unitInfo.name : 'No Unit'}
+                    </Badge>
                 </div>
 
                 {/* Stats Cards */}
@@ -213,8 +246,8 @@ export default function MemberDashboard() {
                                 <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-xl sm:text-2xl font-bold">{stats.thisMonthFees.toLocaleString()} RWF</div>
-                                <p className="text-xs text-muted-foreground">Fees paid this month</p>
+                                <div className="text-xl sm:text-2xl font-bold">{Math.round(stats.thisMonthFees).toLocaleString()} RWF</div>
+                                <p className="text-xs text-muted-foreground">Fees this month</p>
                             </CardContent>
                         </Card>
                     </Link>
@@ -283,9 +316,9 @@ export default function MemberDashboard() {
                                     upcomingFees.map((fee) => (
                                         <div key={fee.id} className="flex items-center justify-between p-2 sm:p-3 border rounded-lg">
                                             <div className="flex-1">
-                                                <p className="text-xs sm:text-sm font-medium">{fee.title}</p>
-                                                <p className="text-[10px] sm:text-xs text-muted-foreground">Due: {new Date(fee.dueDate).toLocaleDateString()}</p>
-                                                <p className="text-[10px] sm:text-xs text-muted-foreground">Amount: {fee.amount.toLocaleString()} RWF</p>
+                                                <p className="text-xs sm:text-sm font-medium">{fee.fee_rule.name}</p>
+                                                <p className="text-[10px] sm:text-xs text-muted-foreground">Due: {new Date(fee.due_date).toLocaleDateString()}</p>
+                                                <p className="text-[10px] sm:text-xs text-muted-foreground">Amount: {Math.round(fee.amount).toLocaleString()} RWF</p>
                                             </div>
                                             <Badge 
                                                 variant={fee.status === 'Paid' ? 'default' : fee.status === 'Overdue' ? 'destructive' : 'secondary'}
@@ -322,8 +355,8 @@ export default function MemberDashboard() {
                                 <CardTitle className="text-xs sm:text-sm">Fees</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-xl sm:text-2xl font-bold text-green-600">{stats.thisMonthFees.toLocaleString()} RWF</div>
-                                <p className="text-xs text-muted-foreground">This month</p>
+                                <div className="text-xl sm:text-2xl font-bold text-green-600">{Math.round(stats.thisMonthFees).toLocaleString()} RWF</div>
+                                <p className="text-xs text-muted-foreground">Total fees</p>
                             </CardContent>
                         </Card>
                     </Link>
@@ -333,8 +366,12 @@ export default function MemberDashboard() {
                                 <CardTitle className="text-xs sm:text-sm">Unit Status</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-xl sm:text-2xl font-bold text-green-600">Active</div>
-                                <p className="text-xs text-muted-foreground">Unit A is operational</p>
+                                <div className="text-xl sm:text-2xl font-bold text-green-600">
+                                    {unitInfo ? 'Active' : 'No Unit'}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    {unitInfo ? `${unitInfo.name} is operational` : 'No unit assigned'}
+                                </p>
                             </CardContent>
                         </Card>
                     </Link>

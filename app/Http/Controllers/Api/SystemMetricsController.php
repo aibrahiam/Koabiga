@@ -25,13 +25,13 @@ class SystemMetricsController extends Controller
             'system' => [
                 'active_sessions' => LoginSession::where('is_active', true)->count(),
                 'activities_today' => ActivityLog::whereDate('created_at', today())->count(),
-                'unresolved_errors' => 0, // Mock data
-                'system_uptime' => 99.9, // Mock data
+                'unresolved_errors' => \App\Models\ErrorLog::where('resolved', false)->count(),
+                'system_uptime' => $this->calculateSystemUptime(),
             ],
             'performance' => [
-                'avg_response_time' => 150, // Mock data in milliseconds
-                'error_rate' => 0.1, // Mock data in percentage
-                'user_satisfaction' => 95, // Mock data in percentage
+                'avg_response_time' => $this->calculateAverageResponseTime(),
+                'error_rate' => $this->calculateErrorRate(),
+                'user_satisfaction' => $this->calculateUserSatisfaction(),
             ],
         ];
 
@@ -60,13 +60,13 @@ class SystemMetricsController extends Controller
             'system' => [
                 'active_sessions' => LoginSession::where('is_active', true)->count(),
                 'activities_today' => ActivityLog::whereDate('created_at', today())->count(),
-                'unresolved_errors' => 0, // Mock data
-                'system_uptime' => 99.9, // Mock data
+                'unresolved_errors' => \App\Models\ErrorLog::where('resolved', false)->count(),
+                'system_uptime' => $this->calculateSystemUptime(),
             ],
             'performance' => [
-                'avg_response_time' => 150, // Mock data in milliseconds
-                'error_rate' => 0.1, // Mock data in percentage
-                'user_satisfaction' => 95, // Mock data in percentage
+                'avg_response_time' => $this->calculateAverageResponseTime(),
+                'error_rate' => $this->calculateErrorRate(),
+                'user_satisfaction' => $this->calculateUserSatisfaction(),
             ],
         ];
 
@@ -143,7 +143,7 @@ class SystemMetricsController extends Controller
                         ],
                     ];
                 }),
-            'recent_errors' => [], // Mock data - would come from error logs
+            'recent_errors' => \App\Models\ErrorLog::orderBy('created_at', 'desc')->limit(10)->get(),
             'active_users' => LoginSession::with('user:id,christian_name,family_name')
                 ->where('is_active', true)
                 ->orderBy('last_activity_at', 'desc')
@@ -161,8 +161,8 @@ class SystemMetricsController extends Controller
                     ];
                 }),
             'system_health' => [
-                'uptime' => 99.9, // Mock data
-                'error_rate' => 0.1, // Mock data
+                'uptime' => $this->calculateSystemUptime(),
+                'error_rate' => $this->calculateErrorRate(),
                 'active_sessions' => LoginSession::where('is_active', true)->count(),
                 'total_users' => User::count(),
             ],
@@ -172,5 +172,50 @@ class SystemMetricsController extends Controller
             'success' => true,
             'data' => $dashboard
         ]);
+    }
+
+    /**
+     * Calculate system uptime percentage
+     */
+    private function calculateSystemUptime(): float
+    {
+        // For now, return a high uptime percentage
+        // In a real implementation, this would check actual system uptime
+        return 99.9;
+    }
+
+    /**
+     * Calculate average response time
+     */
+    private function calculateAverageResponseTime(): int
+    {
+        // For now, return a reasonable response time
+        // In a real implementation, this would calculate from actual request logs
+        return 150;
+    }
+
+    /**
+     * Calculate error rate percentage
+     */
+    private function calculateErrorRate(): float
+    {
+        $totalErrors = \App\Models\ErrorLog::count();
+        $totalActivities = ActivityLog::count();
+        
+        if ($totalActivities === 0) {
+            return 0.0;
+        }
+        
+        return round(($totalErrors / $totalActivities) * 100, 1);
+    }
+
+    /**
+     * Calculate user satisfaction percentage
+     */
+    private function calculateUserSatisfaction(): int
+    {
+        // For now, return a high satisfaction rate
+        // In a real implementation, this would be based on user feedback/surveys
+        return 95;
     }
 } 

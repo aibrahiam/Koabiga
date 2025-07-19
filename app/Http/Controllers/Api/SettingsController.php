@@ -5,51 +5,33 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Config;
+use App\Models\Setting;
+use Illuminate\Support\Facades\Artisan;
 
 class SettingsController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        // Mock settings data
+        // Get settings from database with fallback to config
         $settings = [
             'system' => [
-                'app_name' => 'Koabiga',
-                'app_version' => '1.0.0',
-                'maintenance_mode' => false,
-                'debug_mode' => false,
-                'timezone' => 'Africa/Kigali',
-                'locale' => 'en',
+                'app_name' => Setting::getValue('system', 'app_name', config('app.name', 'Koabiga')),
+                'app_version' => Setting::getValue('system', 'app_version', config('app.version', '1.0.0')),
+                'maintenance_mode' => Setting::getValue('system', 'maintenance_mode', app()->isDownForMaintenance()),
+                'debug_mode' => Setting::getValue('system', 'debug_mode', config('app.debug', false)),
+                'timezone' => Setting::getValue('system', 'timezone', config('app.timezone', 'Africa/Kigali')),
+                'locale' => Setting::getValue('system', 'locale', config('app.locale', 'en')),
             ],
             'email' => [
-                'smtp_host' => 'smtp.mailtrap.io',
-                'smtp_port' => 2525,
-                'smtp_encryption' => 'tls',
-                'from_address' => 'noreply@koabiga.com',
-                'from_name' => 'Koabiga System',
+                'smtp_host' => Setting::getValue('email', 'smtp_host', config('mail.mailers.smtp.host', '')),
+                'smtp_port' => Setting::getValue('email', 'smtp_port', config('mail.mailers.smtp.port', 587)),
+                'smtp_encryption' => Setting::getValue('email', 'smtp_encryption', config('mail.mailers.smtp.encryption', 'tls')),
+                'from_address' => Setting::getValue('email', 'from_address', config('mail.from.address', 'noreply@koabiga.com')),
+                'from_name' => Setting::getValue('email', 'from_name', config('mail.from.name', 'Koabiga System')),
             ],
-            'notifications' => [
-                'email_notifications' => true,
-                'sms_notifications' => true,
-                'push_notifications' => false,
-                'activity_alerts' => true,
-                'report_reminders' => true,
-            ],
-            'security' => [
-                'session_timeout' => 15, // minutes
-                'max_login_attempts' => 5,
-                'password_expiry_days' => 90,
-                'two_factor_auth' => false,
-                'ip_whitelist' => [],
-            ],
-            'agriculture' => [
-                'default_currency' => 'RWF',
-                'land_measurement_unit' => 'hectares',
-                'crop_tracking_enabled' => true,
-                'produce_tracking_enabled' => true,
-                'fee_management_enabled' => true,
-            ],
+            'notifications' => Setting::getCategory('notifications'),
+            'security' => Setting::getCategory('security'),
+            'agriculture' => Setting::getCategory('agriculture'),
         ];
 
         return response()->json([
@@ -69,14 +51,13 @@ class SettingsController extends Controller
             'settings.agriculture' => 'nullable|array',
         ]);
 
-        // Mock settings update
         $updatedSettings = $validated['settings'];
 
-        // In a real implementation, you would save these to a settings table or config files
+        // Store settings in database
         foreach ($updatedSettings as $category => $settings) {
             foreach ($settings as $key => $value) {
-                // Store in cache for now
-                Cache::put("settings.{$category}.{$key}", $value, now()->addDays(30));
+                $type = $this->determineType($value);
+                Setting::setValue($category, $key, $value, $type);
             }
         }
 
@@ -89,16 +70,8 @@ class SettingsController extends Controller
 
     public function public(): JsonResponse
     {
-        // Public settings that don't require authentication
-        $publicSettings = [
-            'app_name' => 'Koabiga',
-            'app_version' => '1.0.0',
-            'maintenance_mode' => false,
-            'timezone' => 'Africa/Kigali',
-            'locale' => 'en',
-            'default_currency' => 'RWF',
-            'land_measurement_unit' => 'hectares',
-        ];
+        // Get public settings from database
+        $publicSettings = Setting::getPublic();
 
         return response()->json([
             'success' => true,
@@ -115,14 +88,15 @@ class SettingsController extends Controller
         $category = $validated['category'];
 
         if ($category === 'all') {
-            // Reset all settings
-            Cache::flush();
+            // Reset all settings by deleting them (will be recreated by seeder)
+            Setting::truncate();
+            // Re-seed default settings
+            Artisan::call('db:seed', ['--class' => 'SettingsSeeder']);
         } else {
             // Reset specific category
-            $keys = Cache::get("settings.{$category}.*");
-            foreach ($keys as $key) {
-                Cache::forget($key);
-            }
+            Setting::where('category', $category)->delete();
+            // Re-seed only that category
+            Artisan::call('db:seed', ['--class' => 'SettingsSeeder']);
         }
 
         return response()->json([
@@ -133,8 +107,17 @@ class SettingsController extends Controller
 
     public function show(string $key): JsonResponse
     {
-        // Get specific setting value
-        $value = Cache::get("settings.{$key}", null);
+        // Parse category and key from dot notation (e.g., "system.app_name")
+        $parts = explode('.', $key);
+        if (count($parts) !== 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid setting key format. Use category.key format.'
+            ], 400);
+        }
+
+        [$category, $settingKey] = $parts;
+        $value = Setting::getValue($category, $settingKey);
 
         if ($value === null) {
             return response()->json([
@@ -150,5 +133,23 @@ class SettingsController extends Controller
                 'value' => $value,
             ]
         ]);
+    }
+
+    /**
+     * Determine the type of a value for storage
+     */
+    private function determineType($value): string
+    {
+        if (is_bool($value)) {
+            return 'boolean';
+        } elseif (is_int($value)) {
+            return 'integer';
+        } elseif (is_float($value)) {
+            return 'float';
+        } elseif (is_array($value)) {
+            return 'json';
+        } else {
+            return 'string';
+        }
     }
 } 

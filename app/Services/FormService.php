@@ -14,7 +14,7 @@ class FormService
      */
     public static function getAvailableForms(): array
     {
-        $formsPath = resource_path('js/pages/koabiga/leaders/forms');
+        $formsPath = resource_path('js/pages/koabiga/leaders/leaders-forms');
         $forms = [];
 
         if (File::exists($formsPath)) {
@@ -53,7 +53,7 @@ class FormService
     public static function createFormFile(array $formData): array
     {
         try {
-            $formsPath = resource_path('js/pages/koabiga/leaders/forms');
+            $formsPath = resource_path('js/pages/koabiga/leaders/leaders-forms');
             
             if (!File::exists($formsPath)) {
                 File::makeDirectory($formsPath, 0755, true);
@@ -240,11 +240,11 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
     {
         title: 'Forms',
-        href: '/koabiga/leaders/forms',
+        href: '/koabiga/leaders/leaders-forms',
     },
     {
         title: '{$title}',
-        href: '/koabiga/leaders/forms/{$formName}',
+        href: '/koabiga/leaders/leaders-forms/{$formName}',
     },
 ];
 
@@ -264,12 +264,12 @@ export default function {$componentName}Form() {
             setLoading(true);
             setError(null);
 
-            const response = await axios.post('/api/leaders/forms/{$formName}', formData);
+            const response = await axios.post('/api/leaders/leaders-forms/{$formName}', formData);
 
             if (response.data.success) {
                 setSuccess('Form submitted successfully!');
                 setTimeout(() => {
-                    router.visit('/koabiga/leaders/forms');
+                    router.visit('/koabiga/leaders/leaders-forms');
                 }, 2000);
             } else {
                 setError(response.data.message || 'Failed to submit form');
@@ -283,7 +283,7 @@ export default function {$componentName}Form() {
     };
 
     const handleCancel = () => {
-        router.visit('/koabiga/leaders/forms');
+        router.visit('/koabiga/leaders/leaders-forms');
     };
 
     return (
@@ -405,7 +405,7 @@ export default function {$componentName}Form() {
     public static function deleteFormFile(string $formName): array
     {
         try {
-            $formsPath = resource_path('js/pages/koabiga/leaders/forms');
+            $formsPath = resource_path('js/pages/koabiga/leaders/leaders-forms');
             $fileName = Str::kebab($formName) . '.tsx';
             $filePath = $formsPath . '/' . $fileName;
 

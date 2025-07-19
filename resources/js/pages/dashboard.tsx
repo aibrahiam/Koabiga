@@ -29,8 +29,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Dashboard() {
-    // Mock user role - in real app this would come from auth context
-    const userRole = 'admin'; // Can be 'admin', 'unit_leader', or 'member'
+    // TODO: Get user role from authentication context
+    const userRole = 'admin'; // This should come from auth context
 
     const roleConfig = {
         admin: {
@@ -39,12 +39,12 @@ export default function Dashboard() {
             badge: 'Admin',
             color: 'bg-green-600 dark:bg-green-500',
             features: [
-                { title: 'Members Management', icon: Users, href: '/koabiga/admin/members', description: 'Manage all platform members' },
-                { title: 'Units Management', icon: Building2, href: '/koabiga/admin/units', description: 'Manage agricultural units' },
-                { title: 'Reports Management', icon: FileText, href: '/koabiga/admin/reports', description: 'Review and approve reports' },
+                { title: 'Members Management', icon: Users, href: '/koabiga/admin/admin-members', description: 'Manage all platform members' },
+                { title: 'Units Management', icon: Building2, href: '/koabiga/admin/admin-units', description: 'Manage agricultural units' },
+                { title: 'Reports Management', icon: FileText, href: '/koabiga/admin/admin-reports', description: 'Review and approve reports' },
                 { title: 'Fee Rules', icon: DollarSign, href: '/koabiga/admin/fee-rules', description: 'Manage platform fee structures' },
                 { title: 'System Settings', icon: Settings, href: '/koabiga/admin/settings', description: 'Configure platform settings' },
-                { title: 'Forms Management', icon: FileText, href: '/koabiga/admin/forms', description: 'Manage system forms' },
+                { title: 'Forms Management', icon: FileText, href: '/koabiga/admin/admin-forms', description: 'Manage system forms' },
                 { title: 'System Logs', icon: Eye, href: '/koabiga/admin/logs', description: 'Monitor system activities' },
                 { title: 'Page Management', icon: Edit, href: '/koabiga/admin/page-management', description: 'Manage user pages and content' },
             ]
@@ -55,11 +55,11 @@ export default function Dashboard() {
             badge: 'Unit Leader',
             color: 'bg-green-600 dark:bg-green-500',
             features: [
-                { title: 'Members Management', icon: Users, href: '/koabiga/unit-leader/members', description: 'Manage unit members' },
-                { title: 'Land Management', icon: MapPin, href: '/koabiga/unit-leader/land', description: 'Manage unit land' },
-                { title: 'Crop Management', icon: Sprout, href: '/koabiga/unit-leader/crops', description: 'Track crop progress' },
-                { title: 'Produce Tracking', icon: Package, href: '/koabiga/unit-leader/produce', description: 'Monitor produce output' },
-                { title: 'Reports', icon: FileText, href: '/koabiga/unit-leader/reports', description: 'Submit and view reports' },
+                { title: 'Members Management', icon: Users, href: '/koabiga/leaders/leader-members', description: 'Manage unit members' },
+                { title: 'Land Management', icon: MapPin, href: '/koabiga/leaders/land', description: 'Manage unit land' },
+                { title: 'Crop Management', icon: Sprout, href: '/koabiga/leaders/crops', description: 'Track crop progress' },
+                { title: 'Produce Tracking', icon: Package, href: '/koabiga/leaders/produce', description: 'Monitor produce output' },
+                { title: 'Reports', icon: FileText, href: '/koabiga/leaders/reports', description: 'Submit and view reports' },
             ]
         },
         member: {

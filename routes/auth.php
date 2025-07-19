@@ -34,7 +34,7 @@ Route::middleware('guest')->group(function () {
         return Inertia::render('auth/leaders-login');
     })->name('leaders-login');
 
-    Route::post('/leaders/login', [AuthController::class, 'leadersLogin'])
+    Route::post('/leaders/login', [AuthController::class, 'leaderLogin'])
         ->name('leaders.login');
 
     // Member Login Routes (handled on welcome page)
@@ -49,23 +49,6 @@ Route::middleware('guest')->group(function () {
     // Universal login POST (handles all roles)
     Route::post('/login', [AuthController::class, 'login'])
         ->name('login.post');
-
-    // Password reset routes (disabled for this system - users added by admins)
-    Route::get('/forgot-password', function () {
-        return Inertia::render('auth/forgot-password');
-    })->name('password.request');
-
-    Route::post('/forgot-password', function () {
-        return back()->with('status', 'Password reset is not available. Contact your administrator.');
-    })->name('password.email');
-
-    Route::get('/reset-password/{token}', function () {
-        return redirect()->route('home')->with('error', 'Password reset is not available.');
-    })->name('password.reset');
-
-    Route::post('/reset-password', function () {
-        return back()->with('error', 'Password reset is not available.');
-    })->name('password.store');
 });
 
 // Authenticated routes
@@ -74,14 +57,6 @@ Route::middleware('auth')->group(function () {
     // Logout route
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout');
-
-    // Password confirmation (if needed for sensitive operations)
-    Route::get('/confirm-password', function () {
-        return Inertia::render('auth/confirm-password');
-    })->name('password.confirm');
-
-    Route::post('/confirm-password', [AuthController::class, 'confirmPassword'])
-        ->name('password.confirm.post');
 
     // Password update (for authenticated users)
     Route::put('/password', [AuthController::class, 'updatePassword'])
@@ -96,26 +71,31 @@ Route::middleware('auth')->group(function () {
 | 1. Entry Point: / (Welcome Page)
 |    - Shows member login form
 |    - Links to admin and leader login pages
+|    - Uses Inertia form submission
 |
 | 2. Admin Login: /admin-login
 |    - Email + Password
 |    - Redirects to /koabiga/admin/dashboard
+|    - Uses Inertia form submission
 |
 | 3. Leader Login: /leaders-login
 |    - Phone + PIN
 |    - Redirects to /koabiga/leaders/dashboard
+|    - Uses Inertia form submission
 |
 | 4. Member Login: / (Welcome Page)
 |    - Phone + PIN
 |    - Redirects to /koabiga/members/dashboard
+|    - Uses Inertia form submission
 |
 | 5. No Public Registration
 |    - Admins register Leaders and Members
 |    - Leaders register Members
 |    - No self-registration
 |
-| 6. No Email Verification
+| 6. No Password Reset
 |    - All users are added by higher roles
 |    - No email-based password reset
+|    - Contact administrator for account issues
 |
 */

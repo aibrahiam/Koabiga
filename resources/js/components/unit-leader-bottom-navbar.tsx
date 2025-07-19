@@ -5,11 +5,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '@/components/ui/button';
 
 const navItems = [
-  { title: 'Dashboard', href: '/koabiga/unit-leader/dashboard', icon: LayoutGrid },
-  { title: 'Members', href: '/koabiga/unit-leader/leader-members', icon: Users },
-  { title: 'Land', href: '/koabiga/unit-leader/land', icon: MapPin },
-  { title: 'Crops', href: '/koabiga/unit-leader/crops', icon: Sprout },
-  { title: 'Forms', href: '/koabiga/unit-leader/forms', icon: ClipboardList },
+    { title: 'Dashboard', href: '/koabiga/leaders/dashboard', icon: LayoutGrid },
+    { title: 'Members', href: '/koabiga/leaders/leader-members', icon: Users },
+    { title: 'Land', href: '/koabiga/leaders/land', icon: MapPin },
+    { title: 'Crops', href: '/koabiga/leaders/crops', icon: Sprout },
+    { title: 'Forms', href: '/koabiga/leaders/leaders-forms', icon: ClipboardList },
 ];
 
 export default function UnitLeaderBottomNavbar() {
@@ -84,19 +84,19 @@ export default function UnitLeaderBottomNavbar() {
               <p className="text-xs text-gray-500 capitalize">{user?.role || 'unit_leader'}</p>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/koabiga/unit-leader/leader-members" className="flex items-center">
+              <Link href="/koabiga/leaders/leader-members" className="flex items-center">
                 <Users className="mr-2 h-4 w-4" />
                 Manage Members
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/koabiga/unit-leader/forms" className="flex items-center">
+              <Link href="/koabiga/leaders/leaders-forms" className="flex items-center">
                 <ClipboardList className="mr-2 h-4 w-4" />
                 Unit Forms
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/koabiga/unit-leader/reports" className="flex items-center">
+              <Link href="/koabiga/leaders/reports" className="flex items-center">
                 <FileText className="mr-2 h-4 w-4" />
                 Reports
               </Link>

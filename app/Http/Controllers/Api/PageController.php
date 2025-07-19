@@ -331,4 +331,67 @@ class PageController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get navigation preview for a specific role
+     */
+    public function getNavigationPreview($role): JsonResponse
+    {
+        try {
+            $pages = Page::byRole($role)
+                ->active()
+                ->orderBy('sort_order', 'asc')
+                ->get();
+
+            $navigationItems = $pages->map(function ($page) {
+                return [
+                    'title' => $page->title,
+                    'href' => $page->path,
+                    'icon' => $page->icon,
+                    'description' => $page->description,
+                    'features' => $page->features ?? [],
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $navigationItems
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch navigation preview: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get page statistics
+     */
+    public function getStats(): JsonResponse
+    {
+        try {
+            $stats = [
+                'total_pages' => Page::count(),
+                'active_pages' => Page::where('status', 'active')->count(),
+                'draft_pages' => Page::where('status', 'draft')->count(),
+                'inactive_pages' => Page::where('status', 'inactive')->count(),
+                'admin_pages' => Page::where('role', 'admin')->count(),
+                'unit_leader_pages' => Page::where('role', 'unit_leader')->count(),
+                'member_pages' => Page::where('role', 'member')->count(),
+                'public_pages' => Page::where('is_public', true)->count(),
+                'private_pages' => Page::where('is_public', false)->count(),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $stats
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch page statistics: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 } 

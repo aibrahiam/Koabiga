@@ -71,7 +71,7 @@ export default function StatCards({ className = '' }: StatCardsProps) {
                 // Fetch unit statistics (if API exists)
                 let unitStats = { total: 0, active: 0, inactive: 0 };
                 try {
-                    const unitStatsResponse = await axios.get('/api/units/statistics');
+                    const unitStatsResponse = await axios.get('/api/admin-units/statistics');
                     if (unitStatsResponse.data.success) {
                         unitStats = unitStatsResponse.data.data;
                     }

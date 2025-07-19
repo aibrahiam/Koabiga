@@ -166,4 +166,83 @@ class ZoneController extends Controller
             'message' => 'Zone deleted successfully'
         ]);
     }
+
+    public function getUnits(Zone $zone): JsonResponse
+    {
+        $units = $zone->units()->with('leader')->get()->map(function ($unit) {
+            return [
+                'id' => $unit->id,
+                'name' => $unit->name,
+                'code' => $unit->code,
+                'leader' => $unit->leader ? [
+                    'id' => $unit->leader->id,
+                    'name' => $unit->leader->christian_name . ' ' . $unit->leader->family_name,
+                    'phone' => $unit->leader->phone,
+                ] : null,
+                'member_count' => $unit->members()->count(),
+                'status' => $unit->status,
+                'created_at' => $unit->created_at->toISOString(),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $units
+        ]);
+    }
+
+    public function getMembers(Zone $zone): JsonResponse
+    {
+        $members = $zone->units()
+            ->with('members')
+            ->get()
+            ->flatMap(function ($unit) {
+                return $unit->members;
+            })
+            ->map(function ($member) {
+                return [
+                    'id' => $member->id,
+                    'christian_name' => $member->christian_name,
+                    'family_name' => $member->family_name,
+                    'phone' => $member->phone,
+                    'email' => $member->email,
+                    'status' => $member->status,
+                    'unit' => $member->unit ? [
+                        'id' => $member->unit->id,
+                        'name' => $member->unit->name,
+                        'code' => $member->unit->code,
+                    ] : null,
+                    'created_at' => $member->created_at->toISOString(),
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $members
+        ]);
+    }
+
+    public function getStatistics(): JsonResponse
+    {
+        $stats = [
+            'total_zones' => Zone::count(),
+            'active_zones' => Zone::where('status', 'active')->count(),
+            'inactive_zones' => Zone::where('status', 'inactive')->count(),
+            'zones_with_leaders' => Zone::whereNotNull('leader_id')->count(),
+            'zones_without_leaders' => Zone::whereNull('leader_id')->count(),
+            'total_units' => Zone::with('units')->get()->sum(function ($zone) {
+                return $zone->units->count();
+            }),
+            'total_members' => Zone::with('units.members')->get()->sum(function ($zone) {
+                return $zone->units->sum(function ($unit) {
+                    return $unit->members->count();
+                });
+            }),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $stats
+        ]);
+    }
 } 

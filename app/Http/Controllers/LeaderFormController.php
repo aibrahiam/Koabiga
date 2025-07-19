@@ -52,7 +52,7 @@ class LeaderFormController extends Controller
             'family_name' => $user->family_name,
         ];
 
-        return Inertia::render('koabiga/leaders/forms/member-creation', [
+        return Inertia::render('koabiga/leaders/leaders-forms/member-creation', [
             'units' => $units,
             'zones' => $zones,
             'leaderUser' => $leaderUser,
@@ -70,7 +70,7 @@ class LeaderFormController extends Controller
             abort(403, 'Access denied. Leader privileges required.');
         }
 
-        return Inertia::render('koabiga/leaders/forms/land-assignment');
+        return Inertia::render('koabiga/leaders/leaders-forms/land-assignment');
     }
 
     /**
@@ -84,7 +84,7 @@ class LeaderFormController extends Controller
             abort(403, 'Access denied. Leader privileges required.');
         }
 
-        return Inertia::render('koabiga/leaders/forms/crop-creation');
+        return Inertia::render('koabiga/leaders/leaders-forms/crop-creation');
     }
 
     /**
@@ -98,6 +98,6 @@ class LeaderFormController extends Controller
             abort(403, 'Access denied. Leader privileges required.');
         }
 
-        return Inertia::render('koabiga/leaders/forms/produce-creation');
+        return Inertia::render('koabiga/leaders/leaders-forms/produce-creation');
     }
 } 

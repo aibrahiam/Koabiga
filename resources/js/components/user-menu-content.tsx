@@ -45,7 +45,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                    <a href="/koabiga/unit-leader/settings" className="block w-full text-left" onClick={cleanup}>
+                    <a href="/koabiga/leaders/settings" className="block w-full text-left" onClick={cleanup}>
                         <Settings className="mr-2" />
                         Settings
                     </a>

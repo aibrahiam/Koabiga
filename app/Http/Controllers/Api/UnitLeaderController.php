@@ -11,6 +11,8 @@ use App\Models\Report;
 use App\Models\ActivityLog;
 use App\Models\Form;
 use App\Models\Unit;
+use App\Models\FeeApplication;
+use App\Models\FeeRule;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +20,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Task;
+use App\Services\ActivityLogService;
 
 class UnitLeaderController extends Controller
 {
@@ -134,11 +138,15 @@ class UnitLeaderController extends Controller
                 ->where('status', 'pending')
                 ->count();
 
-            // Mock upcoming tasks count (in a real app, this would come from a tasks table)
-            $upcomingTasks = 5; // Mock data
+            // Get actual upcoming tasks count from tasks table
+            $upcomingTasks = Task::where('unit_id', $unit->id)
+                ->upcoming()
+                ->count();
 
-            // Calculate completed tasks (mock data for now)
-            $completedTasks = rand(50, 200); // Mock data
+            // Calculate actual completed tasks from tasks table
+            $completedTasks = Task::where('unit_id', $unit->id)
+                ->completed()
+                ->count();
 
             return response()->json([
                 'success' => true,
@@ -225,41 +233,36 @@ class UnitLeaderController extends Controller
                 ], 403);
             }
 
-            // Mock upcoming tasks data (in a real app, this would come from a tasks table)
-            $tasks = [
-                [
-                    'id' => 1,
-                    'title' => 'Harvest corn from Field A',
-                    'dueDate' => now()->addDays(3)->format('Y-m-d'),
-                    'priority' => 'high',
-                    'assignedTo' => 'John Doe',
-                    'type' => 'harvest'
-                ],
-                [
-                    'id' => 2,
-                    'title' => 'Plant new wheat crop',
-                    'dueDate' => now()->addDays(5)->format('Y-m-d'),
-                    'priority' => 'medium',
-                    'assignedTo' => 'Sarah Smith',
-                    'type' => 'planting'
-                ],
-                [
-                    'id' => 3,
-                    'title' => 'Submit monthly report',
-                    'dueDate' => now()->addDays(1)->format('Y-m-d'),
-                    'priority' => 'high',
-                    'assignedTo' => 'Unit Leader',
-                    'type' => 'report'
-                ],
-                [
-                    'id' => 4,
-                    'title' => 'Equipment maintenance',
-                    'dueDate' => now()->addDays(7)->format('Y-m-d'),
-                    'priority' => 'low',
-                    'assignedTo' => 'Mike Johnson',
-                    'type' => 'maintenance'
-                ],
-            ];
+            $unit = $user->unit;
+            
+            if (!$unit) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'message' => 'No unit assigned to this leader.'
+                ]);
+            }
+
+            // Get actual tasks from database
+            $tasks = Task::where('unit_id', $unit->id)
+                ->with(['assignedTo', 'assignedBy', 'land', 'crop'])
+                ->orderBy('due_date', 'asc')
+                ->get()
+                ->map(function ($task) {
+                    return [
+                        'id' => $task->id,
+                        'title' => $task->title,
+                        'description' => $task->description,
+                        'type' => $task->type,
+                        'priority' => $task->priority,
+                        'status' => $task->status,
+                        'dueDate' => $task->due_date->format('Y-m-d'),
+                        'assignedTo' => $task->assignedTo ? $task->assignedTo->christian_name . ' ' . $task->assignedTo->family_name : 'Unassigned',
+                        'assignedBy' => $task->assignedBy ? $task->assignedBy->christian_name . ' ' . $task->assignedBy->family_name : 'System',
+                        'land' => $task->land ? $task->land->land_number : null,
+                        'crop' => $task->crop ? $task->crop->name : null,
+                    ];
+                });
 
             return response()->json([
                 'success' => true,
@@ -326,8 +329,10 @@ class UnitLeaderController extends Controller
                     // Calculate assigned land area
                     $assignedLand = Land::where('user_id', $member->id)->sum('area');
                     
-                    // Mock completed tasks (in a real app, this would come from a tasks table)
-                    $completedTasks = rand(10, 50);
+                    // Calculate actual completed tasks from tasks table
+                    $completedTasks = Task::where('assigned_to', $member->id)
+                        ->completed()
+                        ->count();
                     
                     return [
                         'id' => $member->id,
@@ -568,9 +573,9 @@ class UnitLeaderController extends Controller
             }
 
             // Normalize phone numbers
-            $memberData['phone'] = $this->normalizePhone($memberData['phone']);
+            $memberData['phone'] = User::normalizePhoneNumber($memberData['phone']);
             if ($memberData['secondary_phone']) {
-                $memberData['secondary_phone'] = $this->normalizePhone($memberData['secondary_phone']);
+                $memberData['secondary_phone'] = User::normalizePhoneNumber($memberData['secondary_phone']);
             }
 
             $member = User::create($memberData);
@@ -1634,28 +1639,160 @@ class UnitLeaderController extends Controller
     }
 
     /**
-     * Normalize phone number to 10-digit format
+     * Submit a form on behalf of a member
      */
-    private function normalizePhone($phone): string
+    public function submitForm(Request $request): JsonResponse
     {
-        // Remove all non-digit characters
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-        
-        // If it starts with 0, remove it
-        if (strlen($phone) === 10 && $phone[0] === '0') {
-            $phone = substr($phone, 1);
+        try {
+            $validated = $request->validate([
+                'form_id' => 'required|exists:forms,id',
+                'form_data' => 'required|array',
+                'member_id' => 'required|exists:users,id',
+                'land_id' => 'nullable|exists:lands,id',
+                'crop_id' => 'nullable|exists:crops,id',
+            ]);
+
+            $user = Auth::user();
+            
+            if (!$user || $user->role !== 'unit_leader') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied. Unit leader privileges required.'
+                ], 403);
+            }
+
+            // Verify the member belongs to the leader's unit
+            $member = User::find($validated['member_id']);
+            if (!$member || $member->unit_id !== $user->unit_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Member does not belong to your unit.'
+                ], 403);
+            }
+
+            // Create form submission
+            $submission = \App\Models\FormSubmission::create([
+                'form_id' => $validated['form_id'],
+                'user_id' => $validated['member_id'],
+                'submitted_by' => $user->id,
+                'form_data' => $validated['form_data'],
+                'status' => 'submitted',
+                'submitted_at' => now(),
+            ]);
+
+            // Log the activity
+            ActivityLogService::log($user, 'form_submission', 'Submitted form on behalf of member', [
+                'form_id' => $validated['form_id'],
+                'member_id' => $validated['member_id'],
+                'submission_id' => $submission->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Form submitted successfully',
+                'data' => $submission
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Form submission error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to submit form: ' . $e->getMessage()
+            ], 500);
         }
-        
-        // If it's 9 digits, add 0 at the beginning
-        if (strlen($phone) === 9) {
-            $phone = '0' . $phone;
-        }
-        
-        // Ensure it's exactly 10 digits
-        if (strlen($phone) !== 10) {
-            throw new \InvalidArgumentException('Phone number must be exactly 10 digits');
-        }
-        
-        return $phone;
     }
+
+    /**
+     * Get fee rules and applications for unit leader's unit
+     */
+    public function getFees(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            
+            if (!$user || $user->role !== 'unit_leader') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied. Unit leader privileges required.'
+                ], 403);
+            }
+
+            $unit = $user->unit;
+            
+            if (!$unit) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'fee_applications' => [],
+                        'stats' => [
+                            'total_fees' => 0,
+                            'paid_fees' => 0,
+                            'pending_fees' => 0,
+                            'overdue_fees' => 0,
+                            'total_amount' => 0,
+                            'paid_amount' => 0,
+                            'pending_amount' => 0,
+                            'overdue_amount' => 0,
+                        ]
+                    ],
+                    'message' => 'No unit assigned to this leader.'
+                ]);
+            }
+
+            // Get fee applications for all members in this unit
+            $feeApplications = FeeApplication::where('unit_id', $unit->id)
+                ->with(['feeRule', 'user:id,christian_name,family_name,phone'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($application) {
+                    return [
+                        'id' => $application->id,
+                        'fee_rule' => [
+                            'id' => $application->feeRule->id,
+                            'name' => $application->feeRule->name,
+                            'type' => $application->feeRule->type,
+                            'description' => $application->feeRule->description,
+                        ],
+                        'user' => [
+                            'id' => $application->user->id,
+                            'name' => $application->user->christian_name . ' ' . $application->user->family_name,
+                            'phone' => $application->user->phone,
+                        ],
+                        'amount' => $application->amount,
+                        'due_date' => $application->due_date,
+                        'status' => $application->status,
+                        'created_at' => $application->created_at,
+                        'paid_date' => $application->paid_date,
+                        'notes' => $application->notes,
+                    ];
+                });
+
+            // Calculate statistics
+            $stats = [
+                'total_fees' => $feeApplications->count(),
+                'paid_fees' => $feeApplications->where('status', 'paid')->count(),
+                'pending_fees' => $feeApplications->where('status', 'pending')->count(),
+                'overdue_fees' => $feeApplications->where('status', 'overdue')->count(),
+                'total_amount' => $feeApplications->sum('amount'),
+                'paid_amount' => $feeApplications->where('status', 'paid')->sum('amount'),
+                'pending_amount' => $feeApplications->where('status', 'pending')->sum('amount'),
+                'overdue_amount' => $feeApplications->where('status', 'overdue')->sum('amount'),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'fee_applications' => $feeApplications,
+                    'stats' => $stats
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch fees data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
 } 

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Unit;
 use App\Models\Zone;
 use App\Services\ActivityLogService;
+use App\Helpers\PasswordHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -62,7 +63,7 @@ class MemberController extends Controller
             'zone_leaders' => User::where('role', 'zone_leader')->count(),
         ];
 
-        return Inertia::render('koabiga/admin/members/members-management', [
+        return Inertia::render('koabiga/admin/admin-members/members-management', [
             'members' => $members,
             'units' => Unit::all(),
             'zones' => Zone::all(),
@@ -73,7 +74,7 @@ class MemberController extends Controller
 
     public function create()
     {
-        return Inertia::render('koabiga/admin/members/CreateMember', [
+        return Inertia::render('koabiga/admin/admin-members/CreateMember', [
             'zones' => Zone::all(),
             'units' => Unit::with('zone')->get(),
         ]);
@@ -84,6 +85,8 @@ class MemberController extends Controller
         $validated = $request->validate([
             'christian_name' => 'required|string|max:100',
             'family_name' => 'required|string|max:100',
+            'date_of_birth' => 'nullable|date',
+            'address' => 'nullable|string|max:500',
             'phone' => 'required|digits:10|unique:users,phone',
             'secondary_phone' => 'nullable|digits:10|unique:users,secondary_phone',
             'pin' => 'required|digits:5',
@@ -130,13 +133,17 @@ class MemberController extends Controller
         }
         
         // Hash the PIN
-        $validated['pin'] = Hash::make($validated['pin']);
+        $validated['pin'] = PasswordHelper::hashPin($validated['pin']);
         
-        // Generate email from name
-        $validated['email'] = strtolower($validated['christian_name'] . '.' . $validated['family_name']) . '@koabiga.com';
-        
-        // Set default password
-        $validated['password'] = Hash::make('password123');
+        // Only generate email for admin users (members and leaders use phone + PIN)
+        if ($request->role === 'admin') {
+            $validated['email'] = strtolower($validated['christian_name'] . '.' . $validated['family_name']) . '@koabiga.com';
+            $validated['password'] = Hash::make('password123');
+        } else {
+            // For members and leaders, set email to null and no password
+            $validated['email'] = null;
+            $validated['password'] = null;
+        }
 
         // Handle role-specific data
         if ($request->role === 'zone_leader') {
@@ -156,7 +163,16 @@ class MemberController extends Controller
         // Log the member creation
         ActivityLogService::logMemberCreation($member);
 
-        return redirect()->route('koabiga.admin.members.index')
+        // Check if this is an AJAX request
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Member created successfully.',
+                'member' => $member
+            ]);
+        }
+
+        return redirect()->route('koabiga.admin.admin-members.index')
             ->with('success', 'Member created successfully.');
     }
 
@@ -164,7 +180,7 @@ class MemberController extends Controller
     {
         $member = User::with(['unit', 'zone'])->findOrFail($id);
         
-        return Inertia::render('koabiga/admin/members/view-member', [
+        return Inertia::render('koabiga/admin/admin-members/view-member', [
             'member' => $member,
         ]);
     }
@@ -173,7 +189,7 @@ class MemberController extends Controller
     {
         $member = User::with(['unit', 'zone'])->findOrFail($id);
         
-        return Inertia::render('koabiga/admin/members/edit', [
+        return Inertia::render('koabiga/admin/admin-members/edit-member', [
             'member' => $member,
             'units' => Unit::all(),
             'zones' => Zone::all(),
@@ -187,6 +203,8 @@ class MemberController extends Controller
         $validated = $request->validate([
             'christian_name' => 'required|string|max:100',
             'family_name' => 'required|string|max:100',
+            'date_of_birth' => 'nullable|date',
+            'address' => 'nullable|string|max:500',
             'phone' => 'required|digits:10|unique:users,phone,' . $id,
             'secondary_phone' => 'nullable|digits:10|unique:users,secondary_phone,' . $id,
             'pin' => 'required|digits:5',
@@ -210,14 +228,14 @@ class MemberController extends Controller
         }
         
         // Hash the PIN
-        $validated['pin'] = Hash::make($validated['pin']);
+        $validated['pin'] = PasswordHelper::hashPin($validated['pin']);
 
         $member->update($validated);
 
         // Log the member update
         ActivityLogService::logMemberUpdate($member);
 
-        return redirect()->route('koabiga.admin.members.index')
+        return redirect()->route('koabiga.admin.admin-members.index')
             ->with('success', 'Member updated successfully.');
     }
 
@@ -236,7 +254,7 @@ class MemberController extends Controller
             'deleted_at' => now()->toISOString(),
         ]);
 
-        return redirect()->route('koabiga.admin.members.index')
+        return redirect()->route('koabiga.admin.admin-members.index')
             ->with('success', 'Member deleted successfully.');
     }
 

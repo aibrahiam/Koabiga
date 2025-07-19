@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Unit;
 use App\Models\Zone;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -158,8 +159,8 @@ class PageController extends Controller
             'sort_order' => $request->sort_order ?? 0,
             'is_public' => $request->is_public ?? false,
             'features' => $request->features ?? [],
-            'created_by' => auth()->user()->id,
-            'updated_by' => auth()->user()->id,
+            'created_by' => Auth::user()->id,
+            'updated_by' => Auth::user()->id,
         ]);
 
         return redirect()->route('koabiga.admin.page-management')
@@ -193,7 +194,7 @@ class PageController extends Controller
             'sort_order' => $request->sort_order ?? 0,
             'is_public' => $request->is_public ?? false,
             'features' => $request->features ?? [],
-            'updated_by' => auth()->user()->id,
+            'updated_by' => Auth::user()->id,
         ]);
 
         return redirect()->route('koabiga.admin.page-management')

@@ -16,9 +16,12 @@ use App\Http\Controllers\Api\SystemMetricsController;
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\ErrorLogController;
 use App\Http\Controllers\Api\LoginSessionController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\UnitLeaderController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\Member\DashboardController as MemberDashboardController;
+use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\ReportController as AdminReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,40 +38,26 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Authentication Routes (Public)
-Route::middleware(['web'])->group(function () {
-    Route::post('/leaders/login', [AuthController::class, 'leadersLogin']);
-    Route::post('/member/login', [AuthController::class, 'memberLogin']);
-    Route::post('/login', [AuthController::class, 'login']);
-});
-
-// Debug route to test authentication
-Route::get('/debug/auth', function () {
-    return response()->json([
-        'authenticated' => Auth::check(),
-        'user' => Auth::user() ? [
-            'id' => Auth::user()->id,
-            'email' => Auth::user()->email,
-            'role' => Auth::user()->role,
-        ] : null,
-        'session_id' => session()->getId(),
-        'session_data' => session()->all(),
-    ]);
-});
-
-// Debug route to test session
-Route::get('/debug/session', function () {
-    return response()->json([
-        'session_id' => session()->getId(),
-        'session_data' => session()->all(),
-        'cookies' => request()->cookies->all(),
-    ]);
-});
-
-// Admin API Routes (Protected)
-Route::prefix('admin')->middleware(['web', 'auth:web', 'role:admin'])->group(function () {
+// Admin API Routes (Protected with rate limiting)
+Route::prefix('admin')->middleware(['web', 'auth:web', 'role:admin', 'throttle:60,1'])->group(function () {
     // Logout (requires authentication)
     Route::post('/logout', [AuthController::class, 'logout']);
+    
+    // Dashboard
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/stats', [AdminDashboardController::class, 'stats']);
+        Route::get('/activities', [AdminDashboardController::class, 'activities']);
+        Route::get('/members', [AdminDashboardController::class, 'members']);
+    });
+    
+    // Reports Management
+    Route::prefix('reports')->group(function () {
+        Route::get('/', [AdminReportController::class, 'index']);
+        Route::post('/generate', [AdminReportController::class, 'generate']);
+        Route::get('/statistics', [AdminReportController::class, 'statistics']);
+        Route::patch('/{id}/status', [AdminReportController::class, 'updateStatus']);
+        Route::delete('/{id}', [AdminReportController::class, 'destroy']);
+    });
     
     // System Metrics
     Route::prefix('system-metrics')->group(function () {
@@ -120,13 +109,29 @@ Route::prefix('admin')->middleware(['web', 'auth:web', 'role:admin'])->group(fun
     Route::post('/members', [UnitLeaderController::class, 'createMember']);
 
     // Units Management
-    Route::prefix('units')->group(function () {
+    Route::prefix('admin-units')->group(function () {
         Route::get('/', [UnitController::class, 'index']);
         Route::post('/', [UnitController::class, 'store']);
         Route::post('/generate-code', [UnitController::class, 'generateCode']);
         Route::get('/{id}', [UnitController::class, 'show']);
         Route::put('/{id}', [UnitController::class, 'update']);
         Route::delete('/{id}', [UnitController::class, 'destroy']);
+        Route::get('/{id}/members', [UnitController::class, 'getMembers']);
+        Route::post('/{id}/members', [UnitController::class, 'addMember']);
+        Route::delete('/{id}/members/{memberId}', [UnitController::class, 'removeMember']);
+        Route::get('/statistics', [UnitController::class, 'statistics']);
+    });
+
+    // Zones Management
+    Route::prefix('zones')->group(function () {
+        Route::get('/', [ZoneController::class, 'index']);
+        Route::post('/', [ZoneController::class, 'store']);
+        Route::get('/{id}', [ZoneController::class, 'show']);
+        Route::put('/{id}', [ZoneController::class, 'update']);
+        Route::delete('/{id}', [ZoneController::class, 'destroy']);
+        Route::get('/{id}/units', [ZoneController::class, 'getUnits']);
+        Route::get('/{id}/members', [ZoneController::class, 'getMembers']);
+        Route::get('/statistics', [ZoneController::class, 'getStatistics']);
     });
 
     // Fee Rules Management
@@ -175,26 +180,40 @@ Route::prefix('admin')->middleware(['web', 'auth:web', 'role:admin'])->group(fun
     });
 });
 
-// Member API Routes
-Route::prefix('member')->middleware(['web', 'auth:web', 'role:member'])->group(function () {
+// Member API Routes (Protected with rate limiting)
+Route::prefix('member')->middleware(['web', 'auth:web', 'role:member', 'throttle:60,1'])->group(function () {
     Route::get('/dashboard/stats', [MemberController::class, 'getDashboardStats']);
     Route::get('/dashboard/activities', [MemberController::class, 'getRecentActivities']);
     Route::get('/dashboard/upcoming-fees', [MemberController::class, 'getUpcomingFees']);
+    Route::get('/unit', [MemberController::class, 'getUnit']);
     Route::get('/land', [MemberController::class, 'getLand']);
     Route::get('/crops', [MemberController::class, 'getCrops']);
     Route::get('/produce', [MemberController::class, 'getProduce']);
     Route::get('/forms', [MemberController::class, 'getForms']);
     Route::get('/reports', [MemberController::class, 'getReports']);
     Route::get('/fees', [MemberController::class, 'getFees']);
+    
+    // Payment routes
+    Route::post('/payments/initiate', [PaymentController::class, 'initiatePayment']);
+    Route::post('/payments/check-status', [PaymentController::class, 'checkPaymentStatus']);
+    Route::get('/payments/history', [PaymentController::class, 'getPaymentHistory']);
+    
+    // Member Dashboard routes
+    Route::get('/dashboard', [MemberDashboardController::class, 'stats']);
+    Route::get('/dashboard/activities', [MemberDashboardController::class, 'activities']);
+    Route::get('/dashboard/upcoming-fees', [MemberDashboardController::class, 'upcomingFees']);
 });
 
-// Public system metrics (limited access)
-Route::prefix('system')->group(function () {
+// Public system metrics (limited access with rate limiting)
+Route::prefix('system')->middleware(['throttle:30,1'])->group(function () {
     Route::get('/health', [SystemMetricsController::class, 'currentStats']);
 });
 
-// Leaders API Routes
-Route::prefix('leaders')->middleware(['web', 'auth:web', 'role:unit_leader,zone_leader'])->group(function () {
+// MTN MoMo callback route (public with rate limiting)
+Route::post('/mtn-momo/callback', [PaymentController::class, 'handleCallback'])->middleware('throttle:10,1');
+
+// Leaders API Routes (Protected with rate limiting)
+Route::prefix('leaders')->middleware(['web', 'auth:web', 'role:unit_leader,zone_leader', 'throttle:60,1'])->group(function () {
     Route::get('/stats', [UnitLeaderController::class, 'stats']);
     Route::get('/unit', [UnitLeaderController::class, 'getUnit']);
     Route::get('/activities', [UnitLeaderController::class, 'activities']);
@@ -206,6 +225,7 @@ Route::prefix('leaders')->middleware(['web', 'auth:web', 'role:unit_leader,zone_
     Route::get('/lands', [UnitLeaderController::class, 'getLands']);
     Route::get('/forms', [UnitLeaderController::class, 'getForms']);
     Route::get('/assigned-forms', [UnitLeaderController::class, 'getAssignedForms']);
+    Route::get('/fees', [UnitLeaderController::class, 'getFees']);
 
     // Members Management for Unit Leaders
     Route::prefix('members')->group(function () {
@@ -241,12 +261,15 @@ Route::prefix('leaders')->middleware(['web', 'auth:web', 'role:unit_leader,zone_
     Route::put('/notifications', [UnitLeaderController::class, 'updateNotifications']);
 });
 
-// Member API Routes
-Route::prefix('member')->middleware(['web', 'auth:web', 'role:member'])->group(function () {
-    Route::get('/dashboard/stats', [MemberController::class, 'getDashboardStats']);
-    Route::get('/dashboard/activities', [MemberController::class, 'getRecentActivities']);
-    Route::get('/dashboard/upcoming-fees', [MemberController::class, 'getUpcomingFees']);
-    Route::get('/land', [MemberController::class, 'getLand']);
-    Route::get('/crops', [MemberController::class, 'getCrops']);
-    Route::get('/produce', [MemberController::class, 'getProduce']);
+// Unit Leader specific routes (for form submissions)
+Route::prefix('unit-leader')->middleware(['web', 'auth:web', 'role:unit_leader'])->group(function () {
+    Route::get('/unit', [UnitLeaderController::class, 'getUnit']);
+    Route::get('/land', [UnitLeaderController::class, 'getLands']);
+    Route::get('/members', [UnitLeaderController::class, 'members']);
+    Route::get('/crops', [UnitLeaderController::class, 'getCrops']);
+    Route::post('/land', [UnitLeaderController::class, 'createLand']);
+    Route::post('/crops', [UnitLeaderController::class, 'createCrop']);
+    Route::post('/produce', [UnitLeaderController::class, 'createProduce']);
+    Route::post('/forms/submit', [UnitLeaderController::class, 'submitForm']);
 });
+

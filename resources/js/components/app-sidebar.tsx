@@ -19,17 +19,17 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Zone Management',
-        href: '/koabiga/admin/zones',
+        href: '/koabiga/admin/admin-zones',
         icon: MapPin,
     },
     {
         title: 'Members',
-        href: '/koabiga/admin/members',
+                        href: '/koabiga/admin/admin-members',
         icon: Users,
     },
     {
         title: 'Units',
-        href: '/koabiga/admin/units',
+        href: '/koabiga/admin/admin-units',
         icon: Building2,
     },
     {
@@ -49,12 +49,12 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Forms',
-        href: '/koabiga/admin/forms',
+        href: '/koabiga/admin/admin-forms',
         icon: ClipboardList,
     },
     {
         title: 'Reports',
-        href: '/koabiga/admin/reports',
+        href: '/koabiga/admin/admin-reports',
         icon: BarChart2,
     },
 ];
