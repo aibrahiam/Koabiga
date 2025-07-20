@@ -12,7 +12,7 @@ use App\Models\User;
 use App\Models\Land;
 use App\Models\Crop;
 use App\Models\Produce;
-use App\Models\MemberFee;
+
 use App\Models\Report;
 use App\Models\ActivityLog;
 use App\Models\Unit;
@@ -144,7 +144,7 @@ class MemberController extends Controller
             }
 
             // Get upcoming fees for this member with safe fallback
-            $fees = MemberFee::where('user_id', $user->id)
+            $fees = FeeApplication::where('user_id', $user->id)
                 ->where('status', '!=', 'paid')
                 ->with('feeRule')
                 ->orderBy('created_at', 'asc')

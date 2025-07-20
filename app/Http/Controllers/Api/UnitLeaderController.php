@@ -1401,12 +1401,14 @@ class UnitLeaderController extends Controller
                 ], 422);
             }
 
-            $user->update($validator->validated());
+            /** @var \App\Models\User $user */
+            $user->fill($validator->validated());
+            $user->save();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Profile updated successfully',
-                'data' => $user->fresh()
+                'data' => $user
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -1453,9 +1455,8 @@ class UnitLeaderController extends Controller
                 ], 422);
             }
 
-            $user->update([
-                'password' => Hash::make($request->new_password)
-            ]);
+            $user->password = Hash::make($request->new_password);
+            $user->save();
 
             return response()->json([
                 'success' => true,
@@ -1504,7 +1505,8 @@ class UnitLeaderController extends Controller
             $settings = $user->settings ?? [];
             $settings['notifications'] = $validator->validated();
             
-            $user->update(['settings' => $settings]);
+            $user->settings = $settings;
+            $user->save();
 
             return response()->json([
                 'success' => true,

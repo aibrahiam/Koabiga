@@ -23,20 +23,22 @@ class ErrorLoggingMiddleware
 
         $response = $next($request);
 
-        // Log slow queries
-        $queries = DB::getQueryLog();
-        foreach ($queries as $query) {
-            if ($query['time'] > 1000) { // Log queries taking more than 1 second
-                ErrorLogService::logWarning(
-                    "Slow database query detected: {$query['time']}ms",
-                    [
-                        'type' => 'slow_query',
-                        'sql' => $query['query'],
-                        'bindings' => $query['bindings'],
-                        'time' => $query['time'],
-                        'connection' => $query['connection'] ?? 'default',
-                    ]
-                );
+        // Log slow queries (only in non-production environments)
+        if (config('app.debug', false)) {
+            $queries = DB::getQueryLog();
+            foreach ($queries as $query) {
+                if ($query['time'] > 1000) { // Log queries taking more than 1 second
+                    ErrorLogService::logWarning(
+                        "Slow database query detected: {$query['time']}ms",
+                        [
+                            'type' => 'slow_query',
+                            'sql' => $query['query'],
+                            'bindings' => $query['bindings'],
+                            'time' => $query['time'],
+                            'connection' => $query['connection'] ?? 'default',
+                        ]
+                    );
+                }
             }
         }
 

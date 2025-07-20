@@ -22,6 +22,8 @@ import {
     SelectValue 
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Toast } from '@/components/ui/toast';
+import AppLayout from '@/layouts/app-layout';
 
 interface Leader {
     id: number;
@@ -43,9 +45,15 @@ interface Zone {
 interface EditZoneProps {
     zone: Zone;
     availableLeaders: Leader[];
+    flash?: {
+        success?: string;
+        error?: string;
+        warning?: string;
+        info?: string;
+    };
 }
 
-export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
+export default function EditZone({ zone, availableLeaders, flash }: EditZoneProps) {
     const [formData, setFormData] = useState({
         name: zone.name,
         code: zone.code,
@@ -56,6 +64,22 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    // Handle flash messages from server
+    useEffect(() => {
+        if (flash?.success) {
+            setSuccessMessage(flash.success);
+            // Clear success message after 5 seconds
+            setTimeout(() => setSuccessMessage(null), 5000);
+        }
+        if (flash?.error) {
+            setErrorMessage(flash.error);
+            // Clear error message after 5 seconds
+            setTimeout(() => setErrorMessage(null), 5000);
+        }
+    }, [flash]);
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -110,6 +134,7 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
             });
         } catch (error) {
             console.error('Error updating zone:', error);
+            setErrorMessage('An error occurred while updating the zone');
             setIsSubmitting(false);
         }
     };
@@ -123,31 +148,36 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
     };
 
     return (
-        <div className="min-h-screen flex flex-col">
+        <AppLayout breadcrumbs={[
+            { title: 'Admin', href: '/koabiga/admin' },
+            { title: 'Zones Management', href: '/koabiga/admin/admin-zones' },
+            { title: 'Edit Zone', href: `/koabiga/admin/admin-zones/${zone.id}/edit` }
+        ]}>
             <Head title={`Edit ${zone.name} - Koabiga Admin`} />
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b">
-                <div className="flex items-center space-x-4">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.visit(`/koabiga/admin/admin-zones/${zone.id}`)}
-                    >
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to Zone
-                    </Button>
+            
+            <div className="flex h-full flex-1 flex-col items-center justify-center gap-6 p-6">
+                {/* Header */}
+                <div className="text-center space-y-4">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Edit Zone</h1>
-                        <p className="text-gray-600 dark:text-gray-400 mt-1">
-                            Update zone information and settings
-                        </p>
                     </div>
                 </div>
-            </div>
 
-            {/* Centered Form Container */}
-            <div className="flex-1 flex items-center justify-center p-6">
-                <div className="w-full max-w-2xl">
+                {/* Form Container with Back Button */}
+                <div className="w-full max-w-2xl space-y-2">
+                    {/* Back Button */}
+                    <div className="flex justify-start">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.visit(`/koabiga/admin/admin-zones/${zone.id}`)}
+                        >
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Back
+                        </Button>
+                    </div>
+
+                    {/* Form */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center space-x-2">
@@ -156,10 +186,10 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={handleSubmit} className="space-y-6">
+                            <form onSubmit={handleSubmit} className="space-y-2">
                                 {/* Basic Information */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div className="space-y-1">
                                         <Label htmlFor="name">Zone Name *</Label>
                                         <Input
                                             id="name"
@@ -175,7 +205,7 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                             </p>
                                         )}
                                     </div>
-                                    <div className="space-y-2">
+                                    <div className="space-y-1">
                                         <Label htmlFor="code">Zone Code *</Label>
                                         <Input
                                             id="code"
@@ -193,7 +223,7 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                     </div>
                                 </div>
                                 {/* Location */}
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                     <Label htmlFor="location">Location</Label>
                                     <Input
                                         id="location"
@@ -210,7 +240,7 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                     )}
                                 </div>
                                 {/* Description */}
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                     <Label htmlFor="description">Description</Label>
                                     <Textarea
                                         id="description"
@@ -231,7 +261,7 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                     </p>
                                 </div>
                                 {/* Leader Assignment */}
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                     <Label htmlFor="leader">Zone Leader</Label>
                                     <Select
                                         value={formData.leader_id}
@@ -276,7 +306,7 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                     )}
                                 </div>
                                 {/* Status */}
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                     <Label htmlFor="status">Status</Label>
                                     <Select
                                         value={formData.status}
@@ -305,7 +335,7 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                                     </p>
                                 </div>
                                 {/* Form Actions */}
-                                <div className="flex items-center justify-end space-x-4 pt-6 border-t">
+                                <div className="flex items-center justify-end space-x-4 pt-2 border-t">
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -337,6 +367,22 @@ export default function EditZone({ zone, availableLeaders }: EditZoneProps) {
                     </Card>
                 </div>
             </div>
-        </div>
+            
+            {/* Toast Notifications */}
+            {successMessage && (
+                <Toast 
+                    message={successMessage} 
+                    type="success"
+                    onDismiss={() => setSuccessMessage(null)}
+                />
+            )}
+            {errorMessage && (
+                <Toast 
+                    message={errorMessage} 
+                    type="error"
+                    onDismiss={() => setErrorMessage(null)}
+                />
+            )}
+        </AppLayout>
     );
 } 

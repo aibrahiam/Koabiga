@@ -60,6 +60,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { SuccessMessage } from '@/components/ui/success-message';
+import { Toast } from '@/components/ui/toast';
 import AppLayout from '@/layouts/app-layout';
 
 interface Zone {
@@ -100,9 +102,15 @@ interface ZoneManagementProps {
         search: string;
         leader?: string;
     };
+    flash?: {
+        success?: string;
+        error?: string;
+        warning?: string;
+        info?: string;
+    };
 }
 
-export default function ZoneManagement({ zones: initialZones, stats: initialStats, filters }: ZoneManagementProps) {
+export default function ZoneManagement({ zones: initialZones, stats: initialStats, filters, flash }: ZoneManagementProps) {
     const [zones, setZones] = useState<Zone[]>(initialZones || []);
     const [stats, setStats] = useState<ZoneStats>(initialStats || {
         total_zones: 0,
@@ -120,6 +128,20 @@ export default function ZoneManagement({ zones: initialZones, stats: initialStat
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    // Handle flash messages from server
+    useEffect(() => {
+        if (flash?.success) {
+            setSuccessMessage(flash.success);
+            // Clear success message after 5 seconds
+            setTimeout(() => setSuccessMessage(null), 5000);
+        }
+        if (flash?.error) {
+            setError(flash.error);
+            // Clear error message after 5 seconds
+            setTimeout(() => setError(null), 5000);
+        }
+    }, [flash]);
 
     // Get unique leaders for filter
     const uniqueLeaders = Array.from(new Set(
@@ -250,12 +272,11 @@ export default function ZoneManagement({ zones: initialZones, stats: initialStat
 
                 {/* Success State */}
                 {successMessage && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div className="flex items-center">
-                            <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
-                            <p className="text-green-800">{successMessage}</p>
-                        </div>
-                    </div>
+                    <SuccessMessage 
+                        message={successMessage} 
+                        onDismiss={() => setSuccessMessage(null)}
+                        className="mb-4"
+                    />
                 )}
 
                 {/* Loading State */}
@@ -822,6 +843,22 @@ export default function ZoneManagement({ zones: initialZones, stats: initialStat
                     </Card>
                 )}
             </div>
+            
+            {/* Toast Notifications */}
+            {successMessage && (
+                <Toast 
+                    message={successMessage} 
+                    type="success"
+                    onDismiss={() => setSuccessMessage(null)}
+                />
+            )}
+            {error && (
+                <Toast 
+                    message={error} 
+                    type="error"
+                    onDismiss={() => setError(null)}
+                />
+            )}
         </AppLayout>
     );
 }

@@ -63,7 +63,7 @@ class ZoneController extends Controller
             'average_performance' => 85, // Placeholder
         ];
 
-        return Inertia::render('koabiga/admin/zones/zone', [
+        return Inertia::render('koabiga/admin/admin-zones/zone', [
             'zones' => $zones,
             'stats' => $stats,
             'filters' => [
@@ -89,7 +89,7 @@ class ZoneController extends Controller
                 ];
             });
 
-        return Inertia::render('koabiga/admin/zones/create-zone', [
+        return Inertia::render('koabiga/admin/admin-zones/create-zone', [
             'availableLeaders' => $availableLeaders,
         ]);
     }
@@ -107,7 +107,7 @@ class ZoneController extends Controller
 
         $zone = Zone::create($validated);
 
-        return redirect()->route('koabiga.admin.zones.index')
+        return redirect('/koabiga/admin/admin-zones')
             ->with('success', 'Zone created successfully');
     }
 
@@ -146,7 +146,7 @@ class ZoneController extends Controller
             }),
         ];
 
-        return Inertia::render('koabiga/admin/zones/view-zone', [
+        return Inertia::render('koabiga/admin/admin-zones/view-zone', [
             'zone' => $zoneData,
         ]);
     }
@@ -178,7 +178,7 @@ class ZoneController extends Controller
                 ];
             });
 
-        return Inertia::render('koabiga/admin/zones/edit-zone', [
+        return Inertia::render('koabiga/admin/admin-zones/edit-zone', [
             'zone' => $zoneData,
             'availableLeaders' => $availableLeaders,
         ]);
@@ -197,7 +197,7 @@ class ZoneController extends Controller
 
         $zone->update($validated);
 
-        return redirect()->route('koabiga.admin.zones.show', $zone)
+        return redirect("/koabiga/admin/admin-zones/{$zone->id}")
             ->with('success', 'Zone updated successfully');
     }
 
@@ -210,7 +210,7 @@ class ZoneController extends Controller
 
         $zone->delete();
 
-        return redirect()->route('koabiga.admin.zones.index')
+        return redirect('/koabiga/admin/admin-zones')
             ->with('success', 'Zone deleted successfully');
     }
 } 

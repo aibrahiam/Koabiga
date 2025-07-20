@@ -39,6 +39,14 @@ class User extends Authenticatable
     ];
 
     /**
+     * Get the role attribute with null safety
+     */
+    public function getRoleAttribute($value)
+    {
+        return $value ?? null;
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var array<int, string>
@@ -154,7 +162,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return isset($this->role) && $this->role === 'admin';
     }
 
     /**
@@ -162,7 +170,7 @@ class User extends Authenticatable
      */
     public function isUnitLeader(): bool
     {
-        return $this->role === 'unit_leader';
+        return isset($this->role) && $this->role === 'unit_leader';
     }
 
     /**
@@ -170,7 +178,7 @@ class User extends Authenticatable
      */
     public function isMember(): bool
     {
-        return $this->role === 'member';
+        return isset($this->role) && $this->role === 'member';
     }
 
     /**
@@ -196,6 +204,14 @@ class User extends Authenticatable
     public function getDisplayNameAttribute(): string
     {
         return $this->full_name ?: 'Unknown User';
+    }
+
+    /**
+     * Get user role safely
+     */
+    public function getRole(): ?string
+    {
+        return $this->role ?? null;
     }
 
     /**

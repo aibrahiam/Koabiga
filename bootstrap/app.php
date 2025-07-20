@@ -4,6 +4,7 @@ use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\ErrorLoggingMiddleware;
+use App\Http\Middleware\SessionTimeoutMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             ErrorLoggingMiddleware::class,
+            SessionTimeoutMiddleware::class,
         ]);
 
         // Add session middleware to API routes that need authentication

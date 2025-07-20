@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use App\Models\ActivityLog;
 use App\Models\LoginSession;
+use App\Models\User;
 
 class SessionTimeoutMiddleware
 {
@@ -60,13 +61,21 @@ class SessionTimeoutMiddleware
             // Update last activity
             Session::put('last_activity', time());
             
-            // Update user's last activity
-            \App\Models\User::where('id', $user->id)->update(['last_activity_at' => now()]);
+            // Update user's last activity (only if it's been more than 5 minutes)
+            $lastUserUpdate = Session::get('last_user_update');
+            if (!$lastUserUpdate || (time() - $lastUserUpdate) > 300) { // 5 minutes
+                User::where('id', $user->id)->update(['last_activity_at' => now()]);
+                Session::put('last_user_update', time());
+            }
             
-            // Update login session
-            LoginSession::where('user_id', $user->id)
-                ->where('session_id', Session::getId())
-                ->update(['last_activity_at' => now()]);
+            // Update login session (only if it's been more than 5 minutes)
+            $lastSessionUpdate = Session::get('last_session_update');
+            if (!$lastSessionUpdate || (time() - $lastSessionUpdate) > 300) { // 5 minutes
+                LoginSession::where('user_id', $user->id)
+                    ->where('session_id', Session::getId())
+                    ->update(['last_activity_at' => now()]);
+                Session::put('last_session_update', time());
+            }
         }
         
         return $next($request);

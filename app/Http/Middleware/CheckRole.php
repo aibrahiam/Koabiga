@@ -30,6 +30,18 @@ class CheckRole
 
         $user = Auth::user();
         
+        // Check if user has a valid role
+        if (!$user->role) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User role not defined'
+                ], 403);
+            }
+            
+            return redirect()->route('unauthorized');
+        }
+        
         // Check if user has any of the required roles
         if (!in_array($user->role, $roles)) {
             if ($request->expectsJson()) {

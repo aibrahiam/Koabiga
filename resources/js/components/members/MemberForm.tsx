@@ -96,7 +96,7 @@ const memberSchema = z.object({
 
 type MemberFormData = z.infer<typeof memberSchema>;
 
-export default function MemberForm({ units, zones, member, onSubmit, isSubmitting, errors }: MemberFormProps) {
+export default function MemberForm({ units = [], zones = [], member, onSubmit, isSubmitting, errors }: MemberFormProps) {
     const [showPin, setShowPin] = useState(false);
     const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
 
@@ -132,12 +132,12 @@ export default function MemberForm({ units, zones, member, onSubmit, isSubmittin
 
     // Filter units based on selected zone
     const filteredUnits = watchedZoneId 
-        ? units.filter(unit => unit.zone_id === parseInt(watchedZoneId))
-        : units;
+        ? units?.filter(unit => unit.zone_id === parseInt(watchedZoneId)) || []
+        : units || [];
 
     // Get selected unit's zone info
-    const selectedUnit = units.find(unit => unit.id === parseInt(watchedUnitId));
-    const selectedZone = zones.find(zone => zone.id === parseInt(watchedZoneId));
+    const selectedUnit = units?.find(unit => unit.id === parseInt(watchedUnitId));
+    const selectedZone = zones?.find(zone => zone.id === parseInt(watchedZoneId));
 
     // Auto-fill zone when unit is selected (for member role)
     useEffect(() => {

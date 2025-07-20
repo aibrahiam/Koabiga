@@ -213,7 +213,9 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
     })->name('system-metrics');
 
     // Zone Management
-    Route::resource('admin-zones', \App\Http\Controllers\ZoneController::class)->names([
+    Route::resource('admin-zones', \App\Http\Controllers\ZoneController::class)->parameters([
+        'admin-zones' => 'zone'
+    ])->names([
         'index' => 'admin-zones.index',
         'create' => 'admin-zones.create',
         'store' => 'admin-zones.store',
@@ -234,10 +236,7 @@ Route::prefix('koabiga/admin')->name('koabiga.admin.')->middleware(['auth', 'rol
         'destroy' => 'admin-members.destroy',
     ]);
     
-    // Members Management Create Page
-    Route::get('admin-members/create', function () {
-        return Inertia::render('koabiga/admin/admin-members/CreateMember');
-    })->name('admin-members.create');
+
     Route::get('admin-members/export', [\App\Http\Controllers\Admin\MemberController::class, 'export'])->name('admin-members.export');
 });
 
@@ -376,6 +375,7 @@ Route::prefix('koabiga/leaders')->name('koabiga.leaders.')->middleware(['auth', 
         ]);
     })->name('fees');
 });
+
 
 
 
